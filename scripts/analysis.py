@@ -11,18 +11,16 @@ import EIDynamics
 import imp
 
 #Get the path
-inFile = os.path.abspath(sys.argv[1])
+inFile = os.path.realpath(sys.argv[1])
 exptDir = os.path.dirname(inFile)
 exptFile = os.path.basename(inFile)
 fileID = exptFile.split('_rec')[0]
 
-# access experimental parameters from recording folder
-eP = imp.load_source('ExptParams',exptDir + '\\' + fileID + "_ExperimentParameters.py")
-
 # Import Experiment Variables
 try:
     print ("Looking for experiment parameters locally")
-    eP = imp.load_source('ExptParams',exptDir + '\\' + fileID + "_ExperimentParameters.py")
+    exptPath = exptDir + "\\" + fileID + "_ExperimentParameters.py"
+    eP = imp.load_source('ExptParams',exptPath)
 except:
     print ("No special instructions, using default variables.")
     try:
