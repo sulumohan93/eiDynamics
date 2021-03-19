@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set_context("talk")
+sns.set_context("paper")
 
-def abf2df(abfFile):
+def abf2data(abfFile):
     try:
         if abfFile:
             import pyabf
