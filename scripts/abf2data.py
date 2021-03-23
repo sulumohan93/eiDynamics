@@ -18,9 +18,12 @@ def abf2data(abfFile):
     sweepArray = {}
 
     for i in range(numSweeps):
+        abf.setSweep(sweepNumber=i)
+        sweepArray.update({'cmd':abf.sweepC})
         for j in range(numChannels):
-            abf.setSweep(sweepNumber=i,channel=j)
+            abf.setSweep(sweepNumber=i, channel=j)
             sweepArray.update({j:abf.sweepY})
+        
         sweepArray.update({'Time':abf.sweepX})
         data[i] = sweepArray
         sweepArray = {}
@@ -28,3 +31,8 @@ def abf2data(abfFile):
     print('Datafile has {} sweeps in {} channels: \n Ch0: Cell, \n Ch1: FrameTTL, \n Ch2: Photodiode, \n Time: Time Axis'.format(numSweeps,numChannels+1))
     
     return data  
+
+    # abf.setSweep(sweepNumber: 3, channel: 0)
+    # print(abf.sweepY) # displays sweep data (ADC)
+    # print(abf.sweepX) # displays sweep times (seconds)
+    # print(abf.sweepC) # displays command waveform (DAC)

@@ -39,5 +39,5 @@ except:
     coordfile = ''
 
 
-cell = EIDynamics.Neuron(date=eP.dateofExpt,location=eP.location,ID=eP.animalID)
-cell.createExperiment('FreqSweep','control',datafile=datafile,coordfile=coordfile)
+cell = EIDynamics.Neuron(eP)
+cell.createExperiment(datafile=datafile,coordfile=coordfile)
