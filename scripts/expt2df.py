@@ -22,22 +22,20 @@ def expt2df(expt):
 
     df["StimFreq"] = eP.stimFreq #stimulation pulse frequency
     df["Intensity"] = eP.intensity # LED intensity
-    print('--------',len(df))
-
     df["Pattern"] = eP.patterns
     df["Repeat"] = eP.repeats
     df["pulseWidth"] = eP.pulseWidth
+    df["EI"] = eP.EorI
 
-    print('--------',len(df))
     # Add analysed data columns
+    # IR
     df["IR"],IRflag = ephysFunc.IRcalc(expt.recordingData,eP.IR_baselineWindow,eP.IR_steadystateWindow)
-    expt.Flags.update({"IRflag": IRflag})
+    expt.Flags.update({"IRFlag": IRflag})
 
-
-
-
-
-
+    # EPSP peaks
+    df_peaks,APflag = ephysFunc.pulseResponseCalc(expt)
+    expt.Flags.update({"APFlag": APflag})
+    df = pd.concat([df, df_peaks],axis=1)
 
 
     # check if the response df already exists

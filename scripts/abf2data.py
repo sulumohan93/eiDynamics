@@ -1,8 +1,4 @@
-import matplotlib.pyplot as plt
-import seaborn as sns
-sns.set_context("paper")
-
-def abf2data(abfFile):
+def abf2data(abfFile,eP):
     try:
         if abfFile:
             import pyabf
@@ -22,7 +18,7 @@ def abf2data(abfFile):
         sweepArray.update({'cmd':abf.sweepC})
         for j in range(numChannels):
             abf.setSweep(sweepNumber=i, channel=j)
-            sweepArray.update({j:abf.sweepY})
+            sweepArray.update({j:baselineSubtractor(abf.sweepY,eP)})
         
         sweepArray.update({'Time':abf.sweepX})
         data[i] = sweepArray
@@ -36,3 +32,10 @@ def abf2data(abfFile):
     # print(abf.sweepY) # displays sweep data (ADC)
     # print(abf.sweepX) # displays sweep times (seconds)
     # print(abf.sweepC) # displays command waveform (DAC)
+
+def baselineSubtractor(sweep,baselineSubtraction):
+    if eP.baselineSubtraction:        
+        sweepNew = sweep - np.mean(sweep[eP.baselineWindow])
+        return sweepNew
+    else:
+        return sweep    

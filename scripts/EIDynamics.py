@@ -9,16 +9,21 @@ class Neuron:
     are captured in this class'''
 
     def __init__(self, eP):
-        self.exptParams = eP
+        self.animalID = eP.animalID
+        self.dateofBirth = eP.dateofBirth
+        self.dateofExpt = eP.dateofExpt
+        self.exptLocation = eP.location
         self.experiment = {} #Experiment class object
         self.properties = {} #ePhys properties
         self.response = pd.DataFrame()
 
-    def createExperiment(self,datafile,coordfile=None):
-        data = abf2data(datafile) #create a dict holding sweepwisedata
+    # tag: improve feature (avoid adding duplicate experiments)
+
+    def createExperiment(self,datafile,coordfile,eP):
+        data = abf2data(datafile,eP) #create a dict holding sweepwisedata
         coords = Coords(coordfile).coords # create a dict holding sweepwise coords extracted from coords object
-        expt = Experiment(self,self.exptParams,data,coords)
-        self.experiment.update({self.exptParams.exptType:expt})
+        expt = Experiment(self,eP,data,coords)
+        self.experiment.update({eP.exptType:expt})
         # self.response.update({self.exptParams.exptType:expt.analyzeExperiment()})
         return expt.analyzeExperiment()
 
@@ -34,7 +39,7 @@ class Experiment:
         self.stimCoords = coords
         self.numSweeps = len(self.recordingData.keys())
         self.sweepIndex = 0  #start of the iterator over sweeps
-        self.Flags = {"IRflag":0}
+        self.Flags = {"IRFlag","APFlag","NoisyBaselineFlag"}
     
     def __iter__(self):
         return self
@@ -68,40 +73,6 @@ class Experiment:
         return self
 
     def FreqResponse(self):
-        
-        # import pandas as pd
-        # from scipy import signal
-        # df = pd.DataFrame(columns=['StimFreq','Intensity','numPulses',...
-        # 'coords','Peak PSP','TimeofOnset',"TimeofPeak",'peakTrend'])
-
-        # for sweep,row in myexpt.stimCoords.items():
-            # df.loc[sweep,"coords"] = np.array(row)
-            # df.loc[sweep,"StimFreq"] = self.exptParams.stimFreq 
-            # df.loc[sweep,"Intensity"] = self.exptParams.intensity   
-
-        # pulsePeriods = []
-        # sf = myexpt.exptParams.stimFreq
-        # IPI = int(20*(1000/sf))
-
-        # for sweep in myexpt.recordingData.values():
-            # ch0_cell = sweep[0]
-            # ch1_frameTTL = sweep[1]
-            # ch2_photodiode = sweep[2]
-
-            # slice out the pulse periods
-            # pulse start times
-            # z = np.where(ch2_photodiode>0.5*np.max(ch2_photodiode),1,0)
-            # peaks_pd, _ = signal.find_peaks(z,distance=200,height=0.5)
-            # widths = signal.peak_widths(z,peaks_pd,rel_height=1.0)
-            # pst = widths[2]
-            # pst2 = pst+IPI
-            # df.loc[sweep,"numPulses"] = len(pst)
-
-            # res = []
-            # for t1,t2 in zip(pst,pst2):
-                # res.append(ch0_cell[int(t1):int(t2)])
-            # 
-            # df.loc[sweep,"peakTrend"] = np.array(res)
         expt2df(self)         
         return self
 

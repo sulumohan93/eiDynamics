@@ -1,5 +1,7 @@
 import numpy as np
 from scipy import signal
+import pandas as pd
+
 
 def IRcalc(recordingData,steadystateWindow1,steadystateWindow2):
     ''' recordingData is the data dictionary with sweeps numbers as keys
@@ -28,9 +30,63 @@ def IRcalc(recordingData,steadystateWindow1,steadystateWindow2):
 
     return IRtrend, IRflag
 
-    
-    
-    
-    
+def pulseResponseCalc(expt):
+    pulsePeriods = []
+    PeakResponses = []
+    df_peaks = pd.DataFrame()
+    eP = expt.exptParams
 
+    for sweepID,sweep in expt.recordingData.items():
+        ch0_cell = sweep[0]
+        ch1_frameTTL = sweep[1]
+        ch2_photodiode = sweep[2]
 
+        #calculate first pulse time
+        # x = np.diff(ch1_frameTTL)
+        # peaks, _ = signal.find_peaks(x,height=np.max(x))
+        # pulseStartTime = peaks[0]
+
+        
+        # slice out the pulse periods
+        sf = eP.stimFreq
+
+        # inter-pulse interval
+        IPI = int(20*(1000/sf))
+
+        # pulse start times
+        y = ch2_photodiode
+        z = np.where(y>0.5*np.max(y),1,0)
+        peaks_pd, _ = signal.find_peaks(z,distance=100,height=0.5)
+        widths = signal.peak_widths(z,peaks_pd,rel_height=1.0)
+        pst = widths[2]
+
+        # pulse period slices
+        pst2 = pst+(pst[1]-pst[0])
+
+        res = []
+        for t1,t2 in zip(pst,pst2):
+            res.append(ch0_cell[int(t1):int(t2)])
+        res = np.array(res)
+
+        if eP.EorI = 'I':
+            minRes = np.min(res,axis=1)
+            PeakResponses.append(np.min(minRes))
+            df_peaks.loc[sweepID,[1,2,3,4,5,6,7,8]] = minRes
+        else eP.EorI = 'E':
+            maxRes = np.max(res,axis=1)
+            PeakResponses.append(np.max(maxRes))
+            df_peaks.loc[sweepID,[1,2,3,4,5,6,7,8]] = maxRes
+            if np.max(maxRes)>80:
+                df_peaks.loc[sweepID,"AP"] = 1
+                APflag = True
+            else:
+                 df_peaks.loc[sweepID,"AP"] = 0       
+
+        # tag: improve feature (AP flag sweep wise) 
+        APflag = 0
+    
+    df_peaks["PeakResponse"] = PeakResponses
+    if 
+    # df_peaks["APflag"] = APflags
+
+    return df_peaks, APflag
