@@ -50,10 +50,11 @@ except:
     print('Local cell data not found, creating new cell')
     cell = EIDynamics.Neuron(eP)
 
-cell.createExperiment(datafile=datafile,coordfile=coordfile,eP=eP)
+cell.createExperiment(datafile=datafile,coordfile=coordfile,exptParams=eP)
 
 # saving 
-pickle.dump(cell,cellFile)
+with open(cellFile,"wb") as f:
+    pickle.dump(cell.response, f)  
 
 # Plots
 plotMaker(cellFile)

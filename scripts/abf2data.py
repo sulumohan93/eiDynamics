@@ -1,8 +1,10 @@
-def abf2data(abfFile,eP):
+import pyabf
+import numpy as np
+
+def abf2data(abfFile,ephysParams):
     try:
         if abfFile:
-            import pyabf
-            import numpy as np
+            print('Loading ABF file')                        
     except:
         print('Please provide valid file')
 
@@ -13,18 +15,18 @@ def abf2data(abfFile,eP):
     data ={}
     sweepArray = {}
 
-    for i in range(numSweeps):
+    # Also exporting time axis and Ch0 command waveform for every sweep
+    for i in range(numSweeps): 
         abf.setSweep(sweepNumber=i)
         sweepArray.update({'cmd':abf.sweepC})
         for j in range(numChannels):
             abf.setSweep(sweepNumber=i, channel=j)
-            sweepArray.update({j:baselineSubtractor(abf.sweepY,eP)})
-        
+            sweepArray.update({j:baselineSubtractor(abf.sweepY,ephysParams)})        
         sweepArray.update({'Time':abf.sweepX})
         data[i] = sweepArray
         sweepArray = {}
-
-    print('Datafile has {} sweeps in {} channels: \n Ch0: Cell, \n Ch1: FrameTTL, \n Ch2: Photodiode, \n Time: Time Axis'.format(numSweeps,numChannels+1))
+    
+    print('Datafile has {} sweeps in {} channels: \n Ch0: Cell, \n Ch1: FrameTTL, \n Ch2: Photodiode, \n Time: Time Axis, \n cmd: Ch0 Command Signal'.format(numSweeps,numChannels+2))
     
     return data  
 
@@ -33,9 +35,9 @@ def abf2data(abfFile,eP):
     # print(abf.sweepX) # displays sweep times (seconds)
     # print(abf.sweepC) # displays command waveform (DAC)
 
-def baselineSubtractor(sweep,baselineSubtraction):
-    if eP.baselineSubtraction:        
-        sweepNew = sweep - np.mean(sweep[eP.baselineWindow])
+def baselineSubtractor(sweep,ephysParams):
+    if ephysParams.baselineSubtraction:        
+        sweepNew = sweep - np.mean(sweep[ephysParams.baselineWindow])
         return sweepNew
     else:
         return sweep    

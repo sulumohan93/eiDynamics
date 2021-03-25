@@ -3,7 +3,8 @@ from scipy import signal
 import pandas as pd
 import ePhysFunctions as ephysFunc
 
-def expt2df(expt):
+# tag: improve feature (remove hardcoded variables, fields, and values)
+def expt2df(expt,neuron):
     # read experiment type
     exptType = expt.exptParams.exptType
     eP = expt.exptParams
@@ -39,9 +40,9 @@ def expt2df(expt):
 
 
     # check if the response df already exists
-    if not expt.neuron.response.empty:
-        expt.neuron.response = pd.concat([expt.neuron.response,df])
+    if not neuron.response.empty:
+        neuron.response = pd.concat([neuron.response,df])
     else:
-        expt.neuron.response = df
+        neuron.response = df
 
     return expt

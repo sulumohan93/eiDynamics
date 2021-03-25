@@ -2,6 +2,7 @@ import numpy as np
 from scipy import signal
 import pandas as pd
 
+# tag: improve feature (remove hardcoded variables, fields, and values)
 
 def IRcalc(recordingData,steadystateWindow1,steadystateWindow2):
     ''' recordingData is the data dictionary with sweeps numbers as keys
@@ -68,25 +69,27 @@ def pulseResponseCalc(expt):
             res.append(ch0_cell[int(t1):int(t2)])
         res = np.array(res)
 
-        if eP.EorI = 'I':
+        if eP.EorI == 'I':
             minRes = np.min(res,axis=1)
             PeakResponses.append(np.min(minRes))
-            df_peaks.loc[sweepID,[1,2,3,4,5,6,7,8]] = minRes
-        else eP.EorI = 'E':
+            print(len(minRes))
+            df_peaks.loc[sweepID+1,[1,2,3,4,5,6,7,8]] = minRes
+            df_peaks.loc[sweepID+1,"AP"] = 0
+        elif eP.EorI == 'E':
             maxRes = np.max(res,axis=1)
             PeakResponses.append(np.max(maxRes))
-            df_peaks.loc[sweepID,[1,2,3,4,5,6,7,8]] = maxRes
+            df_peaks.loc[sweepID+1,[1,2,3,4,5,6,7,8]] = maxRes
             if np.max(maxRes)>80:
-                df_peaks.loc[sweepID,"AP"] = 1
+                df_peaks.loc[sweepID+1,"AP"] = 1
                 APflag = True
             else:
-                 df_peaks.loc[sweepID,"AP"] = 0       
+                 df_peaks.loc[sweepID+1,"AP"] = 0       
 
         # tag: improve feature (AP flag sweep wise) 
         APflag = 0
     
     df_peaks["PeakResponse"] = PeakResponses
-    if 
+    # if 
     # df_peaks["APflag"] = APflags
 
     return df_peaks, APflag
