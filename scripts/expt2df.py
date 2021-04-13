@@ -30,7 +30,7 @@ def expt2df(expt,neuron):
 
     # Add analysed data columns
     # IR
-    df["IR"],IRflag = ephysFunc.IRcalc(expt.recordingData,eP.IR_baselineWindow,eP.IR_steadystateWindow)
+    df["IR"],IRflag = ephysFunc.IRcalc(expt.recordingData,eP.clamp,eP.IR_baselineWindow,eP.IR_steadystateWindow)
     expt.Flags.update({"IRFlag": IRflag})
 
     # EPSP peaks

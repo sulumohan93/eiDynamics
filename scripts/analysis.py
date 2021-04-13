@@ -42,8 +42,8 @@ except:
     coordfile = ''
 
 # Recording cell data and analyses
-try:
-    cellFile = exptDir + "\\" + "cell.pkl"
+cellFile = exptDir + "\\" + "cell.pkl"
+try:    
     print('Loading local cell data')
     cell = pickle.load(cellFile)
 except:
@@ -57,4 +57,5 @@ with open(cellFile,"wb") as f:
     pickle.dump(cell.response, f)  
 
 # Plots
-plotMaker(cellFile)
+plotMaker(cellFile,ploty="peakRes",plotby="EI")
+plotMaker(cellFile,ploty="peakTime",plotby="EI")

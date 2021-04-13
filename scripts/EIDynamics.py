@@ -3,6 +3,7 @@ import numpy as np
 from abf2data import abf2data
 from expt2df import expt2df
 import pandas as pd
+from ePhysFunctions import IRcalc
 
 class Neuron:
     '''All properties and behaviours of a recorded neuron
@@ -13,8 +14,10 @@ class Neuron:
         self.dateofBirth = eP.dateofBirth
         self.dateofExpt = eP.dateofExpt
         self.exptLocation = eP.location
+        
+        # derived in order: neuron.expt -> neuron.response -> neuron.properties
         self.experiment = {} #Experiment class object
-        self.properties = {} #ePhys properties, derived in order: expt -> response -> properties
+        self.properties = {} #ePhys properties, 
         self.response = pd.DataFrame()
 
     # tag: improve feature (avoid adding duplicate experiments)
@@ -33,7 +36,6 @@ class Experiment:
     neuron are captured by this superclass.'''
 
     def __init__(self,neuron,eP,data,coords=None):
-        # self.neuron = neuron # tag: removed feature (recursive reference to the parent neuron object)
         self.exptParams = eP
         self.recordingData = data
         self.stimCoords = coords
@@ -58,7 +60,7 @@ class Experiment:
             return self.sealTest()
         elif self.exptParams.exptType == 'IR':
             #Call a function to calculate cell input resistance from recording 
-            return self.inputRes()
+            return self.inputRes(self,neuron)
         elif 'Hz' in self.exptParams.exptType:
             #Call a function to analyze the freq dependent response
             return self.FreqResponse(neuron)
@@ -67,14 +69,15 @@ class Experiment:
         # calculate access resistance from data
         return self
 
-    def inputRes(self):
+    def inputRes(self,neuron):
         # calculate input resistance from data
-        self.neuron.properties.update({'IR':150})
+        neuron.properties.update({'IR':np.mean(IRcalc(self.recordingData,np.arange[1,200],np.arange[500,700]))})
         return self
+
     # tag: improve feature (do away with so many nested functions)
     def FreqResponse(self,neuron):
         # there can be multiple kinds of freq based responses.
-        expt2df(self,neuron) # this function takes expt and convert to a dataframe
+        expt2df(self,neuron) # this function takes expt and convert to a dataframe of responses
         return self
 
 # currently class "Coords" is not being used
