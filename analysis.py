@@ -9,8 +9,9 @@ import os
 import imp
 import pandas as pd
 import pickle
-from . import EIDynamics
-from .plotMaker import plotMaker
+
+from eiDynamics import EIDynamics
+from eiDynamics import plotMaker
 
 #Get the path
 datafile = os.path.realpath(sys.argv[1])
@@ -28,7 +29,7 @@ try:
 except:
     print ("No special instructions, using default variables.")
     try:
-        from . import ExperimentParameters_Default as eP
+        from eiDynamics import ExperimentParameters_Default as eP
     except:
         print ("No analysis variable found!")
 

@@ -1,7 +1,8 @@
 import numpy as np
 from scipy import signal
 import pandas as pd
-import ePhysFunctions as ephysFunc
+
+from . import ePhysFunctions as ephysFunc
 
 # tag: improve feature (remove hardcoded variables, fields, and values)
 def expt2df(expt,neuron):

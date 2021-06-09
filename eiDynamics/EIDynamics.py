@@ -1,9 +1,10 @@
 # Libraries
 import numpy as np
 import pandas as pd
-from abf2data import abf2data
-from expt2df import expt2df
-from ePhysFunctions import IRcalc
+
+from . import abf2data
+from . import expt2df
+from . ePhysFunctions import IRcalc
 
 class Neuron:
     '''All properties and behaviours of a recorded neuron
