@@ -8,6 +8,7 @@ from eiDynamics import plotMaker
 import sys
 import os
 import imp
+import matplotlib.pyplot as plt
 import pandas as pd
 import pickle
 import eiDynamics
@@ -60,5 +61,6 @@ with open(cellFile,"wb") as f:
     pickle.dump(cell.response, f)  
 
 # Plots
+
 plotMaker(cellFile,ploty="peakRes",plotby="EI")
 plotMaker(cellFile,ploty="peakTime",plotby="EI")
