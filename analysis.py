@@ -4,14 +4,15 @@ Created on Friday 12th March 2021
 @author: Aditya Asopa, Bhalla Lab, NCBS
 """
 ## Import libraries
+from eiDynamics import plotMaker
 import sys
 import os
 import imp
 import pandas as pd
 import pickle
-
-from eiDynamics import EIDynamics
-from eiDynamics import plotMaker
+import eiDynamics
+from eiDynamics import ePhysClasses
+from eiDynamics.plotMaker import plotMaker
 
 #Get the path
 datafile = os.path.realpath(sys.argv[1])
@@ -25,11 +26,12 @@ epFile = os.path.abspath(epFile)
 try:
     print ("Looking for experiment parameters locally")
     eP = imp.load_source('ExptParams',epFile)
-    print('Local parameters loaded')
+    print('Local parameters loaded from: ',epFile)
 except:
     print ("No special instructions, using default variables.")
     try:
-        from eiDynamics import ExperimentParameters_Default as eP
+        import eiDynamics.ExperimentParameters_Default as eP
+        print('Default Experiment Parameters loaded')
     except:
         print ("No analysis variable found!")
 
@@ -37,7 +39,7 @@ except:
 try:
     coordfile = exptDir + "\\" + fileID + "_coords.txt"
     os.path.isfile(coordfile)
-    print('Loading local coord file')  
+    print('Local coord file loaded from: ',coordfile)  
 except:
     print('No coord file found, probably there isn\'t one')
     coordfile = ''
@@ -49,7 +51,7 @@ try:
     cell = pickle.load(cellFile)
 except:
     print('Local cell data not found, creating new cell')
-    cell = EIDynamics.Neuron(eP)
+    cell = ePhysClasses.Neuron(eP)
 
 cell.createExperiment(datafile=datafile,coordfile=coordfile,exptParams=eP)
 

@@ -2,9 +2,10 @@
 import numpy as np
 import pandas as pd
 
-from . import abf2data
-from . import expt2df
-from . ePhysFunctions import IRcalc
+from eiDynamics.abf2data import abf2data
+from eiDynamics.expt2df import expt2df
+from eiDynamics.ePhysFunctions import IRcalc
+
 
 class Neuron:
     '''All properties and behaviours of a recorded neuron
@@ -28,7 +29,7 @@ class Neuron:
         coords = Coords(coordfile).coords # create a dict holding sweepwise coords extracted from coords object
         expt = Experiment(self,exptParams,data,coords)
         # tag: improve feature (add multiple experiments of same exptType in the neuron.experiment dict)
-        self.experiment.update({{exptParams.exptType:expt}})
+        self.experiment.update({exptParams.exptType:expt})
         expt.analyzeExperiment(self)
 
 
