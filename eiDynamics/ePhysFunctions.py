@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 # tag: improve feature (remove hardcoded variables, fields, and values)
 
 def IRcalc(recordingData,clamp,steadystateWindow1,steadystateWindow2):
-    ''' recordingData is the data dictionary with sweeps numbers as keys
-    Provide steadystateWindow values in milliseconds'''
+    ''' recordingData is the data dictionary with sweeps numbers as keys.
+        Provide steadystateWindow values in milliseconds'''
     
     Fs = 20
     IRtrend = []

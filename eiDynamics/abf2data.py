@@ -26,7 +26,7 @@ def abf2data(abfFile,ephysParams):
         data[i] = sweepArray
         sweepArray = {}
     
-    print('Datafile has {} sweeps in {} channels: \n Ch0: Cell, \n Ch1: FrameTTL, \n Ch2: Photodiode, \n Time: Time Axis, \n cmd: Ch0 Command Signal'.format(numSweeps,numChannels+2))
+    print('Datafile has {} sweeps in {} channels: \n Ch0: Cell, \n Ch1: FrameTTL, \n Ch2: Photodiode, \n Ch3: Field, \n Time: Time Axis, \n cmd: Ch0 Command Signal'.format(numSweeps,numChannels+2))
     
     return data  
 

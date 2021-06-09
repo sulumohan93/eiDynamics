@@ -45,6 +45,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
 
     # # Adjust the tick positions and labels
     grid.set(xlim=(vals[0]-1,vals[-1]+1))
+    grid.set(ylim=(-200,400))
 
     # Save and show figure
     exptDir = os.path.dirname(cellpickleFile)

@@ -4,9 +4,8 @@ linearity-master
 testExamples
 testScripts
 .vscode
-venv-lab
 __pycache__
 .ipynb_checkpoints
 
 # files
-test*.*
+*test*.*

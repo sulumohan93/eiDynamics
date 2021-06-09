@@ -1,8 +1,8 @@
 # Libraries
 import numpy as np
+import pandas as pd
 from abf2data import abf2data
 from expt2df import expt2df
-import pandas as pd
 from ePhysFunctions import IRcalc
 
 class Neuron:
@@ -27,7 +27,7 @@ class Neuron:
         coords = Coords(coordfile).coords # create a dict holding sweepwise coords extracted from coords object
         expt = Experiment(self,exptParams,data,coords)
         # tag: improve feature (add multiple experiments of same exptType in the neuron.experiment dict)
-        self.experiment.update({exptParams.exptType:expt})
+        self.experiment.update({{exptParams.exptType:expt}})
         expt.analyzeExperiment(self)
 
 
