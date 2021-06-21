@@ -101,7 +101,8 @@ def pulseResponseCalc(expt):
                    
 
         # tag: improve feature (AP flag sweep wise) 
-        APflag = 0
+        # Jun 21, I think it is taken care of, in the for loop above. Commenting out.
+        # APflag = 0
     
     df_peaks["PeakResponse"] = PeakResponses
 

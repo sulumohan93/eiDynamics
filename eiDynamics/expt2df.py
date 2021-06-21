@@ -30,11 +30,11 @@ def expt2df(expt,neuron):
     df["EI"] = eP.EorI
 
     # Add analysed data columns
-    # IR
+    '''IR'''
     df["IR"],IRflag = ephysFunc.IRcalc(expt.recordingData,eP.clamp,eP.IR_baselineWindow,eP.IR_steadystateWindow)
     expt.Flags.update({"IRFlag": IRflag})
 
-    # EPSP peaks
+    '''EPSP peaks'''
     df_peaks,APflag = ephysFunc.pulseResponseCalc(expt)
     expt.Flags.update({"APFlag": APflag})
     df = pd.concat([df, df_peaks],axis=1)

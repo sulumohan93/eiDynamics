@@ -28,6 +28,7 @@ condition = conditions[0]
 
 Fs = 20
 baselineSubtraction = True
+baselineCriterion = 0.1 # baseline fluctuations of 10% are allowed
 baselineStart = 0
 baselineEnd = 200 # milliseconds, end of baseline time
 baselineWindow = Fs*np.arange(baselineStart,baselineEnd)

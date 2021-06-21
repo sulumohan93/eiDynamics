@@ -18,32 +18,35 @@ class Neuron:
         self.exptLocation = eP.location
         
         # derived in order: neuron.expt -> neuron.response -> neuron.properties
-        self.experiment = {} #Experiment class object
-        self.properties = {} #ePhys properties, 
-        self.response = pd.DataFrame()
+        self.experiment = {} #Experiment class object, a dict holding experiment objects as values and exptType as keys
+        self.response = pd.DataFrame() # a pandas dataframe container to hold the table of responses to all experiments
+        self.properties = {} #ePhys properties, derived from analyzing and stats on the response dataframe
+        
 
     # tag: improve feature (avoid adding duplicate experiments)
 
     def createExperiment(self,datafile,coordfile,exptParams):
         data = abf2data(datafile,exptParams) #create a dict holding sweepwisedata
         coords = Coords(coordfile).coords # create a dict holding sweepwise coords extracted from coords object
-        expt = Experiment(self,exptParams,data,coords)
+        expt = Experiment(self,exptParams,data,coords) # create an object of experiment class with the recording data and coords
         # tag: improve feature (add multiple experiments of same exptType in the neuron.experiment dict)
-        self.experiment.update({exptParams.exptType:expt})
-        expt.analyzeExperiment(self)
+        self.experiment.update({exptParams.exptType:expt}) #exptTypes = ['GapFree','IR','CurrentStep','20Hz','30Hz','40Hz','50Hz','100Hz']
+        expt.analyzeExperiment(self) # send the experiment object for analysis and analysed data saved in Neuron.resonse dataframe
 
 
 class Experiment:
     '''All different kinds of experiments conducted on a patched
     neuron are captured by this superclass.'''
 
-    def __init__(self,neuron,eP,data,coords=None):
+    def __init__(self,eP,data,coords=None):
         self.exptParams = eP
-        self.recordingData = data
+        self.recordingData = data[0]
+        self.meanBaseline = data[1]
         self.stimCoords = coords
         self.numSweeps = len(self.recordingData.keys())
         self.sweepIndex = 0  #start of the iterator over sweeps
-        self.Flags = {"IRFlag","APFlag","NoisyBaselineFlag"}
+        self.Flags = {"IRFlag","APFlag","NoisyBaselineFlag","RaChangeFlag"}
+        self.Flags["NoisyBaselineFlag"] = data[2]
     
     def __iter__(self):
         return self
@@ -79,7 +82,7 @@ class Experiment:
     # tag: improve feature (do away with so many nested functions)
     def FreqResponse(self,neuron):
         # there can be multiple kinds of freq based responses.
-        expt2df(self,neuron) # this function takes expt and convert to a dataframe of responses
+        expt2df(self,neuron) # this function takes expt and converts to a dataframe of responses
         return self
 
 # currently class "Coords" is not being used
