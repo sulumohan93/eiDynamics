@@ -11,11 +11,11 @@ class Neuron:
     '''All properties and behaviours of a recorded neuron
     are captured in this class'''
 
-    def __init__(self, eP):
-        self.animalID = eP.animalID
-        self.dateofBirth = eP.dateofBirth
-        self.dateofExpt = eP.dateofExpt
-        self.exptLocation = eP.location
+    def __init__(self, exptParams):
+        self.animalID = exptParams.animalID
+        self.dateofBirth = exptParams.dateofBirth
+        self.dateofExpt = exptParams.dateofExpt
+        self.exptLocation = exptParams.location
         
         # derived in order: neuron.expt -> neuron.response -> neuron.properties
         self.experiment = {} #Experiment class object, a dict holding experiment objects as values and exptType as keys
@@ -27,8 +27,9 @@ class Neuron:
 
     def createExperiment(self,datafile,coordfile,exptParams):
         data = abf2data(datafile,exptParams) #create a dict holding sweepwisedata
-        coords = Coords(coordfile).coords # create a dict holding sweepwise coords extracted from coords object
-        expt = Experiment(self,exptParams,data,coords) # create an object of experiment class with the recording data and coords
+        coords = Coords(coordfile).coords if coordfile  else ''  # create a dict holding sweepwise coords extracted from coords object
+        expt = Experiment(exptParams,data,coords) # create an object of experiment class with the recording data and coords
+        # expt = Experiment(self,exptParams,data,coords) # create an object of experiment class with the recording data and coords
         # tag: improve feature (add multiple experiments of same exptType in the neuron.experiment dict)
         self.experiment.update({exptParams.exptType:expt}) #exptTypes = ['GapFree','IR','CurrentStep','20Hz','30Hz','40Hz','50Hz','100Hz']
         expt.analyzeExperiment(self) # send the experiment object for analysis and analysed data saved in Neuron.resonse dataframe
@@ -45,7 +46,7 @@ class Experiment:
         self.stimCoords = coords
         self.numSweeps = len(self.recordingData.keys())
         self.sweepIndex = 0  #start of the iterator over sweeps
-        self.Flags = {"IRFlag","APFlag","NoisyBaselineFlag","RaChangeFlag"}
+        self.Flags = {"IRFlag":False,"APFlag":False,"NoisyBaselineFlag":False,"RaChangeFlag":False}
         self.Flags["NoisyBaselineFlag"] = data[2]
     
     def __iter__(self):
@@ -71,7 +72,7 @@ class Experiment:
             return self.FreqResponse(neuron)
 
     def sealTest(self):
-        # calculate access resistance from data
+        # calculate access resistance from data, currently not implemented
         return self
 
     def inputRes(self,neuron):

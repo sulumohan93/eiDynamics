@@ -1,4 +1,3 @@
-from numpy.lib import npyio
 import pyabf
 import numpy as np
 

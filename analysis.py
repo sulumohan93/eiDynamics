@@ -27,20 +27,27 @@ epFile = os.path.abspath(epFile)
 try:
     print ("Looking for experiment parameters locally")
     eP = imp.load_source('ExptParams',epFile)
-    print('Local parameters loaded from: ',epFile)
+    print('Experiment parameters loaded from: ',epFile)
+    assert (eP.datafile == exptFile),"Datafile mismatch! Make sure the data file in experiment parameters is same as recording file supplied."
 except:
-    print ("No special instructions, using default variables.")
-    try:
-        import eiDynamics.ExperimentParameters_Default as eP
-        print('Default Experiment Parameters loaded')
-    except:
-        print ("No analysis variable found!")
+    print ("Experiment Parameters required or data file mismatch. Quitting!")
+    sys.exit()
+    #Tag: removed the default experiment parameters. Does not make sense as every experiment needs to have a description.
+    # print ("No special instructions, using default variables.")
+    # try:
+    #     import eiDynamics.ExperimentParameters_Default as eP
+    #     print('Default Experiment Parameters loaded')
+    # except:
+    #     print ("No analysis variable found!")
 
 # importing stimulation coordinates
 try:
-    coordfile = exptDir + "\\" + fileID + "_coords.txt"
+    coordfileName = eP.polygonProtocol    
+    #tag: removed requirment of local copy of polygon protocols
+    #coordfile = exptDir + "\\" + fileID + "_coords.txt"
+    coordfile = os.path.join(os.getcwd(),"polygonProtocols",coordfileName)
     os.path.isfile(coordfile)
-    print('Local coord file loaded from: ',coordfile)  
+    print('Local coord file loaded from: ',coordfile)
 except:
     print('No coord file found, probably there isn\'t one')
     coordfile = ''
@@ -61,6 +68,5 @@ with open(cellFile,"wb") as f:
     pickle.dump(cell.response, f)  
 
 # Plots
-
 plotMaker(cellFile,ploty="peakRes",plotby="EI")
 plotMaker(cellFile,ploty="peakTime",plotby="EI")

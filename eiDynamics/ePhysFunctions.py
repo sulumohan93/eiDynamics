@@ -45,6 +45,8 @@ def pulseResponseCalc(expt):
     df_peaks = pd.DataFrame()
     eP = expt.exptParams
 
+    APflag = bool(0)
+
     for sweepID,sweep in expt.recordingData.items():
         ch0_cell = sweep[0]
         ch1_frameTTL = sweep[1]
