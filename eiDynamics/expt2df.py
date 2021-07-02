@@ -5,31 +5,30 @@ from . import patternIndex
 from . import ePhysFunctions as ephysFunc
 
 # tag: improve feature (remove hardcoded variables, fields, and values)
-def expt2df(expt,neuron):
+def expt2df(expt,neuron,eP):
     # read experiment type
-    eP = expt.exptParams
     numSweeps = len(expt.stimCoords)
     
     # create the dataframe that stores analyzed experiment results
     df = pd.DataFrame()
-    features = ["Sweep","Repeat","PatternID","numSquares","Coords","Intensity","pulseWidth","StimFreq"]
+    features = ["Sweep","Repeat","PatternID","numSquares","Intensity","pulseWidth","StimFreq","EI"]#removed "coords" from columns
     df = pd.DataFrame(columns=features)
-    df.astype({'Coords': 'object'})
+    df.astype({"Sweep":'int8',"Repeat":"int8","PatternID":"int8","numSquares":"int8","Intensity":"int8","pulseWidth":"int8","StimFreq":"int8","EI":"string"})#"Coords":'object',
 
     # fill in columns for experiment parameters,
     # they will serve as axes for sorting analysed data in plots
     for r,co in expt.stimCoords.items():
-        df.loc[r,"Sweep"]=r # coords
-        df.loc[r,"Coords"]=co # coords
+        df.loc[r,"Sweep"]=int(r) # coords
+        # df.loc[r,"Coords"]=np.array(co) # coords
         df.loc[r,"numSquares"]=int(len(co)) #numSquares
-        df.loc[r,"numSquares"]=int(len(co))
-        df.loc[r,"PatternID"] = patternIndex.givePatternID(co)
+        df.loc[r,"PatternID"] = int(patternIndex.givePatternID(co))
 
     df["StimFreq"] = eP.stimFreq #stimulation pulse frequency
     df["Intensity"] = eP.intensity # LED intensity
     df["Repeat"] = eP.repeats
     df["pulseWidth"] = eP.pulseWidth
-    df["EI"] = eP.EorI
+    df["EI"] = str(eP.EorI)
+    df.astype({"EI":'string'})
 
     # Add analysed data columns
     '''IR'''
@@ -37,7 +36,7 @@ def expt2df(expt,neuron):
     expt.Flags.update({"IRFlag": IRflag})
 
     '''EPSP peaks'''
-    df_peaks,APflag = ephysFunc.pulseResponseCalc(expt)
+    df_peaks,APflag = ephysFunc.pulseResponseCalc(expt,eP)
     expt.Flags.update({"APFlag": APflag})
     df = pd.concat([df, df_peaks],axis=1)
 

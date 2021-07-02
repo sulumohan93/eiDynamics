@@ -38,12 +38,11 @@ def IRcalc(recordingData,clamp,steadystateWindow1,steadystateWindow2):
 
     return IRtrend, IRflag
 
-def pulseResponseCalc(expt):
+def pulseResponseCalc(expt,eP):
     pulsePeriods = []
     PeakResponses = []
     
     df_peaks = pd.DataFrame()
-    eP = expt.exptParams
 
     APflag = bool(0)
 
@@ -57,9 +56,8 @@ def pulseResponseCalc(expt):
         IPI = int(20*(1000/sf)) # inter-pulse interval
 
         # pulse start times
-        y = ch2_photodiode
-        z = np.where(y>0.5*np.max(y),1,0)
-        peaks_pd, _ = signal.find_peaks(z,distance=100,height=0.5)
+        z = np.where(ch2_photodiode>0.5*np.max(ch2_photodiode),1,0) # z is the binarized photodiode signal
+        peaks_pd, _ = signal.find_peaks(z,distance=150,height=0.5)#at least 7.5 ms apart pulses
         widths = signal.peak_widths(z,peaks_pd,rel_height=1.0)
         pst = widths[2]
 
@@ -70,7 +68,7 @@ def pulseResponseCalc(expt):
         for t1,t2 in zip(pst,pst2):
             res.append(ch0_cell[int(t1):int(t2)])
         res = np.array(res)
-        # print(sweepID,'---',np.shape(res))
+
         peakTimes =[]
 
         if eP.EorI == 'I' or eP.clamp == 'CC':
@@ -83,7 +81,7 @@ def pulseResponseCalc(expt):
                 peakTimes.append(pr[0]/20)
             df_peaks.loc[sweepID+1,[9,10,11,12,13,14,15,16]]=peakTimes[:]
             df_peaks.loc[sweepID+1,"firstPulseTime"]=peakTimes[0]
-            df_peaks.loc[sweepID+1,"AP"] = False
+            df_peaks.loc[sweepID+1,"AP"] = bool(False)
             if eP.clamp == 'CC':
                 df_peaks.loc[sweepID+1,"AP"] = bool(np.max(maxRes)>80)
                 APflag = bool(df_peaks.loc[sweepID+1,"AP"] == True)
@@ -101,11 +99,7 @@ def pulseResponseCalc(expt):
             df_peaks.loc[sweepID+1,"AP"] = bool(np.max(-1*minRes)>80)
             APflag = bool(df_peaks.loc[sweepID+1,"AP"] == True)
                    
-
-        # tag: improve feature (AP flag sweep wise) 
-        # Jun 21, I think it is taken care of, in the for loop above. Commenting out.
-        # APflag = 0
-    
+    df_peaks.astype({"AP":'bool'})
     df_peaks["PeakResponse"] = PeakResponses
 
     return df_peaks, APflag

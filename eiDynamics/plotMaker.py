@@ -10,7 +10,9 @@ sns.set_context("paper")
 # tag: improve feature (remove hardcoded variables, fields, and values)
 
 def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI"):
-    resp = pd.read_pickle(cellpickleFile)
+    with open(cellpickleFile,'rb') as fin:
+        x = pickle.load(fin)
+    resp = x.response
 
     # load file
     # resp = cell.response
@@ -51,5 +53,3 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     exptDir = os.path.dirname(cellpickleFile)
     imageFile = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + ".png"
     plt.savefig(imageFile)
-    
-

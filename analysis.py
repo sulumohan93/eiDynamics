@@ -27,18 +27,18 @@ epFile = os.path.abspath(epFile)
 try:
     print ("Looking for experiment parameters locally")
     eP = imp.load_source('ExptParams',epFile)
-    print('Experiment parameters loaded from: ',epFile)
     assert (eP.datafile == exptFile),"Datafile mismatch! Make sure the data file in experiment parameters is same as recording file supplied."
+    saveTrial = True
+    print('Experiment parameters loaded from: ',epFile)
 except:
-    print ("Experiment Parameters required or data file mismatch. Quitting!")
-    sys.exit()
-    #Tag: removed the default experiment parameters. Does not make sense as every experiment needs to have a description.
-    # print ("No special instructions, using default variables.")
-    # try:
-    #     import eiDynamics.ExperimentParameters_Default as eP
-    #     print('Default Experiment Parameters loaded')
-    # except:
-    #     print ("No analysis variable found!")
+    print ("No special instructions, using default variables.")
+    try:
+        import eiDynamics.ExperimentParameters_Default as eP
+        saveTrial = False
+        print('Default Experiment Parameters loaded')
+    except:
+        print ("Experiment Parameters error. Quitting!")
+        sys.exit()
 
 # importing stimulation coordinates
 try:
@@ -54,18 +54,18 @@ except:
 
 # Recording cell data and analyses
 cellFile = exptDir + "\\" + "cell.pkl"
-try:    
+try:
+    Cell = ePhysClasses.Neuron.loadCell(cellFile)
     print('Loading local cell data')
-    cell = pickle.load(cellFile)
 except:
-    print('Local cell data not found, creating new cell')
+    print('Local cell data not found, creating new cell.')
     cell = ePhysClasses.Neuron(eP)
 
 cell.createExperiment(datafile=datafile,coordfile=coordfile,exptParams=eP)
 
-# saving 
-with open(cellFile,"wb") as f:
-    pickle.dump(cell.response, f)  
+# saving
+if saveTrial:
+    ePhysClasses.Neuron.saveCell(cell,cellFile)
 
 # Plots
 plotMaker(cellFile,ploty="peakRes",plotby="EI")

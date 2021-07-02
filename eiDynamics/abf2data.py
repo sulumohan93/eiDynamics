@@ -2,6 +2,10 @@ import pyabf
 import numpy as np
 
 def abf2data(abfFile,*args):
+    ''' A wrapper around pyabf module to generate sweep wise dictionary of recorded traces.
+    The first argument should be the abf file, second can be the experiment parameters, which
+    if not supplied will be loaded from defaults. Baseline Subtraction is OFF by default.'''
+        
     try:
         if abfFile:
             print('Loading ABF file')                        
@@ -29,10 +33,11 @@ def abf2data(abfFile,*args):
         sweepArray.update({'cmd':abf.sweepC})
         for j in range(numChannels):
             abf.setSweep(sweepNumber=i, channel=j)
-            parsedSweep,swpBaseline = baselineSubtractor(abf.sweepY,eP)
+            parsedSweep,swpBaseline = baselineSubtractor(abf.sweepY,eP,subtractBaseline=True)
             sweepArray.update({j:parsedSweep})
             if j==0:
                 baselineValues[i] = swpBaseline
+                parsedSweep,swpBaseline = baselineSubtractor(abf.sweepY,eP,eP.baselineSubtraction)
         sweepArray.update({'Time':abf.sweepX})
         data[i] = sweepArray
         sweepArray = {}
@@ -48,14 +53,15 @@ def abf2data(abfFile,*args):
     
     return data,meanBaseline,baselineFlag  
 
+    '''pyABF sweep extraction reference'''
     # abf.setSweep(sweepNumber: 3, channel: 0)
     # print(abf.sweepY) # displays sweep data (ADC)
     # print(abf.sweepX) # displays sweep times (seconds)
     # print(abf.sweepC) # displays command waveform (DAC)
 
-def baselineSubtractor(sweep,ephysParams):
+def baselineSubtractor(sweep,ephysParams,subtractBaseline):
     sweepBaseline = np.mean(sweep[ephysParams.baselineWindow])
-    if ephysParams.baselineSubtraction:        
+    if subtractBaseline:        
         sweepNew = sweep - sweepBaseline
         return sweepNew, sweepBaseline
     else:

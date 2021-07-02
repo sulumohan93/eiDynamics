@@ -23,9 +23,11 @@ incubation = (ageAtExp - ageAtInj)
 objMag = 40 # magnification in x
 frameSize = np.array([12960,6912]) #frame size in um, with 1x magnification
 gridSize = 24 #corresponds to pixel size of 13x8 µm
-pixelSize = frameSize/(gridSize*objMag)
+squareSize = frameSize/(gridSize*objMag)
 
 ## Experiment
+datafile = ''
+cellID = ''
 intensity = 100
 stimFreq = 20 # in Hz
 pulseWidth = 5
@@ -34,18 +36,19 @@ bathTemp = 32 # degree celsius
 location = ''
 clamp = ''
 EorI = ''
-patterns = ''
+polygonProtocol = ''
 repeats = ''
 
 numPulses = 8 # a fixed number for all frequencies
 
-exptTypes = ['GapFree','IR','CurrentStep','20Hz','30Hz','40Hz','50Hz','100Hz']
+exptTypes = ['GapFree','IR','CurrentStep','1sq20Hz','20Hz','30Hz','40Hz','50Hz','100Hz']
 exptType = exptTypes[-1]
 
 conditions = ['Control','Gabazine']
 condition = conditions[0]
 
 Fs = 20
+signalScaling=1 # sometimes, the DAQ does not save current values in proper units
 baselineSubtraction = False
 baselineCriterion = 0.1 # baseline fluctuations of 10% are allowed
 baselineStart = 0

@@ -3,9 +3,14 @@ separationStyle = 'hex'
 sparsity = 2 # denotes how close together the squares can be, sparsity of 1 means a chessboard pattern
 totalCoords = 45
 
+def givePatternID(sqSet):
+    for k,v in patternID.items():
+        if v==sqSet:
+            return int(k)
+
 _1sqCoords = [147,243,339,435,101,197,293,389,485,151,247,343,439,105,201,
             297,393,489,155,251,347,443,109,205,301,397,493,159,255,351,
-            447,113,209,305,401,497,163,259,355,451,117,213,309,405,501]
+            447,113,209,305,401,497,163,259,355,451,117,213,309,405,501] # not ordered
 
 '''Check allCells.xslx sheet for details'''
 patternID ={1	:[101],														
@@ -111,8 +116,3 @@ patternID ={1	:[101],
             101	:[109,155,159,205,251,255,297,301,347,351,393,397,443,489,493],
             102	:[113,117,163,209,213,259,305,309,355,401,405,447,451,497,501],
             103	:[113,159,163,209,255,259,305,351,355,397,401,447,451,493,497]}
-
-def givePatternID(sqSet):
-    for k,v in patternID.items():
-        if v==sqSet:
-            return int(k)
