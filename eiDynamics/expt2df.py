@@ -6,12 +6,12 @@ from . import ePhysFunctions as ephysFunc
 
 # tag: improve feature (remove hardcoded variables, fields, and values)
 def expt2df(expt,neuron,eP):
-    # read experiment type
+    '''read experiment type and returns experiment object'''
     numSweeps = len(expt.stimCoords)
     
     # create the dataframe that stores analyzed experiment results
     df = pd.DataFrame()
-    features = ["Sweep","Repeat","PatternID","numSquares","Intensity","pulseWidth","StimFreq","EI"]#removed "coords" from columns
+    features = ["Sweep","Repeat","PatternID","numSquares","Intensity","pulseWidth","StimFreq","EI","unit"]#removed "coords" from columns
     df = pd.DataFrame(columns=features)
     df.astype({"Sweep":'int8',"Repeat":"int8","PatternID":"int8","numSquares":"int8","Intensity":"int8","pulseWidth":"int8","StimFreq":"int8","EI":"string"})#"Coords":'object',
 
@@ -28,6 +28,8 @@ def expt2df(expt,neuron,eP):
     df["Repeat"] = eP.repeats
     df["pulseWidth"] = eP.pulseWidth
     df["EI"] = str(eP.EorI)
+    df["unit"] = str(eP.unit)
+    df.astype({"unit":'string'})
     df.astype({"EI":'string'})
 
     # Add analysed data columns
@@ -43,7 +45,8 @@ def expt2df(expt,neuron,eP):
     # check if the response df already exists
     if not neuron.response.empty:
         neuron.response = pd.concat([neuron.response,df])
+        
     else:
         neuron.response = df
-
+    neuron.response = neuron.response.drop_duplicates() # prevents duplicates from buildup if same experiment is run again.
     return expt

@@ -9,7 +9,7 @@ sns.set_context("paper")
 
 # tag: improve feature (remove hardcoded variables, fields, and values)
 
-def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI"):
+def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
     with open(cellpickleFile,'rb') as fin:
         x = pickle.load(fin)
     resp = x.response
@@ -18,11 +18,13 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     # resp = cell.response
     resp1 = resp.copy()
 
+    unit = resp1.iloc[1,resp1.columns.get_loc("unit")]
+
     # tag: improve feature (to permanently remove hard coding the indices of calculated values,
     # use of tiers in pandas dataframe needs to be implemented)
     if ploty == "peakRes":
         vals = np.arange(1,9)
-        valName = "PSC Value (mV)"
+        valName = "PSR Value ("+ unit + ")"
     elif ploty == "onsetDelay":
         vals = np.arange(9,17)
         valName = "Onset Delay (ms)"
@@ -32,7 +34,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     else:
         print("Don't know what to plot. Plotting peak responses.")
         vals = np.arange(1,9)
-        valName = "PSC Value (mV)"
+        valName = "PSR Value ("+ unit + ")"
 
     # Separate the identifier variables from valua variables by melting the dataframe
     respMelt = pd.melt(resp1,id_vars=["Repeat",gridRow,gridColumn,plotby],value_vars=vals,var_name='pulseIndex', value_name=valName)
@@ -47,9 +49,12 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
 
     # # Adjust the tick positions and labels
     grid.set(xlim=(vals[0]-1,vals[-1]+1))
-    grid.set(ylim=(-200,400))
+    if clipSpikes:
+        grid.set(ylim=(-200,200)) # currently hardcoding the plot limits for clipping spikes Tag: Improve feature
 
     # Save and show figure
     exptDir = os.path.dirname(cellpickleFile)
     imageFile = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + ".png"
     plt.savefig(imageFile)
+
+    return grid

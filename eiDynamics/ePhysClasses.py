@@ -29,16 +29,10 @@ class Neuron:
         data = abf2data(datafile,exptParams) #create a dict holding sweepwisedata
         coords = Coords(coordfile).coords if coordfile  else ''  # create a dict holding sweepwise coords extracted from coords object
         expt = Experiment(exptParams,data,coords) # create an object of experiment class with the recording data and coords
-        # expt = Experiment(self,exptParams,data,coords) # create an object of experiment class with the recording data and coords
-        # tag: improve feature (add multiple experiments of same exptType in the neuron.experiment dict)
-        if not exptParams.exptType in self.experiment:
-            exptDict = {exptParams.EorI:expt}
-        else:
-            exptDict = self.experiment[exptParams.exptType]
-            exptDict.update({exptParams.EorI:expt})
-
-        self.experiment.update({exptParams.exptType:exptDict}) #exptTypes = ['GapFree','IR','CurrentStep','20Hz','30Hz','40Hz','50Hz','100Hz']
-        expt.analyzeExperiment(self,exptParams) # send the experiment object for analysis and analysed data saved in Neuron.resonse dataframe
+        
+        exptObj = expt.analyzeExperiment(self,exptParams) # send the experiment object for analysis and analysed data saved in Neuron.resonse dataframe
+        self.updateExperiment(exptObj,self.experiment,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
+        
     
     def __iter__(self):
         return self.experiment.iteritems()
@@ -74,6 +68,22 @@ class Neuron:
                     "DAQ":'Digidata 1440',"Amplifier":'Multiclamp 700B'}
                     
         return self
+
+    def updateExperiment(self,exptObj,exptDict,condition,exptType,stimFreq,EorI):
+        if not condition in exptDict:
+            exptDict.update({condition:{exptType:{stimFreq:{EorI:exptObj}}}})
+        else:
+            if not exptType in exptDict[condition]:
+                exptDict[condition].update({exptType:{stimFreq:{EorI:exptObj}}})
+            else:
+                if not stimFreq in exptDict[condition][exptType]:
+                    exptDict[condition][exptType].update({stimFreq:{EorI:exptObj}})
+                else:
+                    if not EorI in exptDict[condition][exptType][stimFreq]:
+                        exptDict[condition][exptType][stimFreq].update({EorI:exptObj})
+
+        exptDict.update(exptDict)
+        return exptDict
 
 class Experiment:
     '''All different kinds of experiments conducted on a patched
@@ -111,7 +121,7 @@ class Experiment:
         elif self.exptType == 'IR':
             #Call a function to calculate cell input resistance from recording 
             return self.inputRes(self,neuron)
-        elif 'Hz' in self.exptType:
+        elif self.exptType in ['1sq20Hz','FreqSweep','LTMRand','LTMSeq']:
             #Call a function to analyze the freq dependent response
             return self.FreqResponse(neuron,exptParams)
 
@@ -127,8 +137,8 @@ class Experiment:
     # tag: improve feature (do away with so many nested functions)
     def FreqResponse(self,neuron,exptParams):
         # there can be multiple kinds of freq based responses.
-        expt2df(self,neuron,exptParams) # this function takes expt and converts to a dataframe of responses
-        return self
+        return expt2df(self,neuron,exptParams) # this function takes expt and converts to a dataframe of responses
+        
 
     def exptParamsParser(self,ep):
         self.dataFile = ep.datafile
@@ -145,6 +155,7 @@ class Experiment:
         self.numPulses = ep.numPulses
         self.Fs= ep.Fs
         self.exptType = ep.exptType
+        self.unit = 'pA' if self.clamp=='VC' else 'mV' if self.clamp=='CC' else 'a.u.'
 
         return self
 
