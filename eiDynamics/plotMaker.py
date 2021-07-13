@@ -16,7 +16,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
 
     # load file
     # resp = cell.response
-    resp1 = resp.copy()
+    resp1 = resp.query("numSquares != 1") # dropping 1sq sweeps from plots
 
     unit = resp1.iloc[1,resp1.columns.get_loc("unit")]
 
@@ -37,24 +37,84 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
         valName = "PSR Value ("+ unit + ")"
 
     # Separate the identifier variables from valua variables by melting the dataframe
-    respMelt = pd.melt(resp1,id_vars=["Repeat",gridRow,gridColumn,plotby],value_vars=vals,var_name='pulseIndex', value_name=valName)
-    plt.figure()
+    respMelt = pd.melt(resp1,id_vars=["Repeat","StimFreq","EI","PatternID","numSquares"],value_vars=vals,var_name='pulseIndex', value_name=valName)
 
-    ## Initialize a grid of plots with an axis each for different fields
-    grid = sns.FacetGrid(respMelt, col=gridColumn, row=gridRow, hue=plotby,palette="viridis")
+    if clipSpikes and valName == "PSR Value (mV)" :
+        respMelt.loc[respMelt["PSR Value (mV)"]>=30,"PSR Value (mV)"]=30
+
+    '''Initialize a grid of plots with an axis each for different fields'''
+    plt.figure()
+    grid = sns.FacetGrid(respMelt,row=gridRow,col=gridColumn,hue=plotby,palette="viridis",legend_out=True)
 
     # Draw a scatter plot to show the PSP/PSC amplitude
-    grid.map(plt.scatter,"pulseIndex",valName,marker="o")
-    plt.legend()
-
+    grid.map(plt.scatter,"pulseIndex",valName,marker="o")# additional kwargs for lineplot: estimator=None,lw=1,units="Repeat", not working though
+    # grid.map(sns.scatterplot,data=respMelt,x="pulseIndex",y=valName,)#estimator=None,units="Repeat"
+    grid.add_legend()
+    
     # # Adjust the tick positions and labels
     grid.set(xlim=(vals[0]-1,vals[-1]+1))
-    if clipSpikes:
-        grid.set(ylim=(-200,200)) # currently hardcoding the plot limits for clipping spikes Tag: Improve feature
+    if clipSpikes and unit=='mV':
+        grid.set(ylim=(0,1.1*np.max(respMelt[valName]))) # currently hardcoding the plot limits for clipping spikes Tag: Improve feature
+
+    # '''trying out relplot'''
+    # fig = sns.relplot(
+    # data=respMelt,
+    # col=gridColumn,row=gridRow,
+    # x="pulseIndex", y=valName,
+    # hue="PatternID", style="EI",
+    # kind="scatter",estimator=None,units="PatternID",
+    # palette="viridis"
+    # )
+
+    ## '''lineplot'''
+    # grid.map(sns.lineplot,"pulseIndex",valName)
 
     # Save and show figure
     exptDir = os.path.dirname(cellpickleFile)
-    imageFile = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + ".png"
+    imageFile = exptDir + "\\" + "plot_" + ploty + "-vs-" + gridRow + "-for-" + plotby + ".png"
     plt.savefig(imageFile)
+    print("saved plotfile: ",imageFile)
+    plt.close('all')
 
+    '''## Initialize a grid of plots with an axis each for different fields
+    plt.figure()
+    grid2 = sns.FacetGrid(respMelt, col=gridColumn, row=gridRow, hue=plotby,palette="viridis")
+
+    grid2.map(sns.lineplot,"pulseIndex",valName)
+    grid2.add_legend()
+
+    # # Adjust the tick positions and labels
+    grid2.set(xlim=(vals[0]-1,vals[-1]+1))
+    if clipSpikes:
+        grid2.set(ylim=(-200,200))
+
+
+    # Save and show figure
+    exptDir = os.path.dirname(cellpickleFile)
+    imageFile2 = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + "-lineplot.png"
+    plt.savefig(imageFile2)
+    
+
+    Initialize a grid of plots with an axis each for different fields
+    plt.figure()
+    grid3 = sns.FacetGrid(respMelt, col=gridColumn, row=gridRow, hue=plotby,palette="viridis")
+
+    # Draw a scatter plot to show the PSP/PSC amplitude
+    grid3.map(plt.scatter,"pulseIndex",valName,marker="o")
+    plt.legend()
+
+    grid3.map(sns.lineplot,"pulseIndex",valName)
+    grid3.add_legend()
+
+    # # Adjust the tick positions and labels
+    grid3.set(xlim=(vals[0]-1,vals[-1]+1))
+    if clipSpikes:
+        grid3.set(ylim=(-200,200))
+
+    # Save and show figure
+    exptDir = os.path.dirname(cellpickleFile)
+    imageFile3 = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + "-scatlineplot.png"
+    plt.savefig(imageFile3)
+    plt.close('all')'''
+    
     return grid

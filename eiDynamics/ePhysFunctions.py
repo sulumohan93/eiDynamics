@@ -101,5 +101,6 @@ def pulseResponseCalc(expt,eP):
                    
     df_peaks.astype({"AP":'bool'})
     df_peaks["PeakResponse"] = PeakResponses
+    df_peaks["datafile"] = eP.datafile
 
     return df_peaks, APflag

@@ -33,11 +33,14 @@ def abf2data(abfFile,*args):
         sweepArray.update({'cmd':abf.sweepC})
         for j in range(numChannels):
             abf.setSweep(sweepNumber=i, channel=j)
-            parsedSweep,swpBaseline = baselineSubtractor(abf.sweepY,eP,subtractBaseline=True)
-            sweepArray.update({j:parsedSweep})
             if j==0:
-                baselineValues[i] = swpBaseline
+                # baselineValues[i] = swpBaseline
                 parsedSweep,swpBaseline = baselineSubtractor(abf.sweepY,eP,eP.baselineSubtraction)
+                baselineValues[i] = swpBaseline
+            else:
+                parsedSweep,_ = baselineSubtractor(abf.sweepY,eP,subtractBaseline=True)
+            sweepArray.update({j:eP.signalScaling*parsedSweep})
+
         sweepArray.update({'Time':abf.sweepX})
         data[i] = sweepArray
         sweepArray = {}

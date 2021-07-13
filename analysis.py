@@ -4,19 +4,14 @@ Created on Friday 12th March 2021
 @author: Aditya Asopa, Bhalla Lab, NCBS
 """
 ## Import libraries
-from eiDynamics import plotMaker
 import sys
 import os
 import imp
-import matplotlib.pyplot as plt
-import pandas as pd
-import pickle
-import eiDynamics
 from eiDynamics import ePhysClasses
 from eiDynamics.plotMaker import plotMaker
     
 #Main function
-def main(inputFile):   
+def main(inputFile,makePlots=False):   
     datafile = os.path.realpath(inputFile)
     exptDir = os.path.dirname(datafile)
     exptFile = os.path.basename(datafile)
@@ -44,8 +39,6 @@ def main(inputFile):
     # importing stimulation coordinates
     try:
         coordfileName = eP.polygonProtocol    
-        #tag: removed requirment of local copy of polygon protocols
-        #coordfile = exptDir + "\\" + fileID + "_coords.txt"
         coordfile = os.path.join(os.getcwd(),"polygonProtocols",coordfileName)
         os.path.isfile(coordfile)
         print('Local coord file loaded from: ',coordfile)
@@ -55,6 +48,7 @@ def main(inputFile):
 
     # Recording cell data and analyses
     cellFile = exptDir + "\\" + "cell.pkl"
+    cellFile_csv = exptDir + "\\" + "cell.xlsx"
     try:
         cell = ePhysClasses.Neuron.loadCell(cellFile)
         print('Loading local cell data')
@@ -67,10 +61,19 @@ def main(inputFile):
     # saving
     if saveTrial:
         ePhysClasses.Neuron.saveCell(cell,cellFile)
+        cell.response.to_excel(cellFile_csv) # save a csv of responses
 
     # Plots
-    plotMaker(cellFile,ploty="peakRes",plotby="EI")
-    plotMaker(cellFile,ploty="peakTime",plotby="EI")
+    if makePlots:
+        plotMaker(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
+        plotMaker(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+        plotMaker(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+
+        plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
+        plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+        plotMaker(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+
+    return cellFile
 
 if __name__ == "__main__":
     main(sys.argv[1])

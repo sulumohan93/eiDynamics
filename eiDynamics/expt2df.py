@@ -22,16 +22,17 @@ def expt2df(expt,neuron,eP):
         # df.loc[r,"Coords"]=np.array(co) # coords
         df.loc[r,"numSquares"]=int(len(co)) #numSquares
         df.loc[r,"PatternID"] = int(patternIndex.givePatternID(co))
-
+    
     df["StimFreq"] = eP.stimFreq #stimulation pulse frequency
     df["Intensity"] = eP.intensity # LED intensity
-    df["Repeat"] = eP.repeats
+    repeatSeq = (np.concatenate([np.linspace(1,1,int(numSweeps/eP.repeats)),np.linspace(2,2,int(numSweeps/eP.repeats)),np.linspace(3,3,int(numSweeps/eP.repeats))])).astype(int)
+    df["Repeat"] = repeatSeq[:numSweeps]
     df["pulseWidth"] = eP.pulseWidth
     df["EI"] = str(eP.EorI)
     df["unit"] = str(eP.unit)
     df.astype({"unit":'string'})
     df.astype({"EI":'string'})
-
+    
     # Add analysed data columns
     '''IR'''
     df["IR"],IRflag = ephysFunc.IRcalc(expt.recordingData,eP.clamp,eP.IR_baselineWindow,eP.IR_steadystateWindow)

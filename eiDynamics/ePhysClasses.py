@@ -153,6 +153,7 @@ class Experiment:
         self.polygonProtocolFile = ep.polygonProtocol
         self.numRepeats = ep.repeats
         self.numPulses = ep.numPulses
+        self.ISI = round(1000/ep.stimFreq,1)
         self.Fs= ep.Fs
         self.exptType = ep.exptType
         self.unit = 'pA' if self.clamp=='VC' else 'mV' if self.clamp=='CC' else 'a.u.'
