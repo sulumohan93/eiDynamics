@@ -1,69 +1,84 @@
 import numpy as np
 import datetime
 
-## Animal
-animalID = 'GXXX' # Base genotype Grik4Cre C57BL/6-Tg(Grik4-cre)G32-4Stl/J (Jax Stock No. 006474)
-sex = '' # 'M' or 'F'
-dateofBirth = datetime.date(2021,1,1)
-dateofInj =   datetime.date(2021,1,28)
-dateofExpt =  datetime.date(2021,2,26)
+# Animal
+# Base genotype Grik4Cre C57BL/6-Tg(Grik4-cre)G32-4Stl/J (Jax Stock No. 006474)
+# NCBS Strain: Grik4Cre_2018
+animalID        = 'GXXX'
+sex             = 'X'
+dateofBirth     = datetime.date(2021, 5, 7)
+dateofInj       = datetime.date(2021, 6, 13)
+dateofExpt      = datetime.date(2021, 7, 30)
+sliceThickness  = 400 											# um
 
-#Virus Injection
-site = {'RC':1.9,'ML':2.0,'DV':1.5} # from bregma, right hemisphere in rostrocausal, mediolateral, and dorsoventral axes
-injectionParams = {'Pressure':8,'pulseWidth':10,'duration':30} #picospritzer nitrogen pressure in psi, pulse width in millisecond, duration in minutes
-virus = 'ChR2' # ChR2 (Addgene 18917) or ChETA (Addgene 35507)
-virusTitre = 6e12 # GC/ml, after dilution
-dilution = 0.5 # in PBS to make up the titre
-volumeInj = 5e-4 # approx volume in ml
-ageAtInj = (dateofInj-dateofBirth)
-ageAtExp = (dateofExpt-dateofBirth)
-incubation = (ageAtExp - ageAtInj)
+# Virus Injection
+site            = {'RC':1.9, 'ML':2.0, 'DV':1.5} 					# from bregma, right hemisphere in rostrocaudal, mediolateral, and dorsoventral axes
+injectionParams = {'Pressure':8, 'pulseWidth':15, 'duration':30}  # picospritzer nitrogen pressure in psi, pulse width in millisecond, duration in minutes
+virus           = 'ChR2'											# ChR2 (Addgene 18917) or ChETA (Addgene 35507)
+virusTitre      = 6e12											# GC/ml, after dilution
+dilution        = 0.5												# in PBS to make up the titre
+volumeInj       = 5e-4 											# approx volume in ml
+ageAtInj        = (dateofInj	- dateofBirth)
+ageAtExp        = (dateofExpt	- dateofBirth)
+incubation      = (ageAtExp	- ageAtInj)
 
-## Polygon
-objMag = 40 # magnification in x
-frameSize = np.array([12960,6912]) #frame size in um, with 1x magnification
-gridSize = 24 #corresponds to pixel size of 13x8 µm
-squareSize = frameSize/(gridSize*objMag)
+# Polygon
+objMag          = 40 												# magnification in x
+frameSize       = np.array([13032.25, 7419.2])					# frame size in um, with 1x magnification
+gridSize        = 24												# corresponds to pixel size of 13x8 µm
+squareSize      = frameSize / (gridSize * objMag)
 
-## Experiment
-datafile = ''
-cellID = ''
-intensity = 100
-stimFreq = 20 # in Hz
-pulseWidth = 5
+# Internal solution (is)
+isBatch         = datetime.date(2021, 7, 29)
+ispH            = 7.35
+isOsm           = 292												# mOsm/kg H2O
 
-bathTemp = 32 # degree celsius
-location = ''
-clamp = ''
-EorI = ''
-polygonProtocol = ''
-repeats = ''
+# Recording solution (aCSF)
+aCSFpH          = 7.40
+aCSFOsm         = 310												# mOsm/kg H2O
+gabaConc        = 2e-6                                            # mol/litre, if gabazine experiments were done
 
-numPulses = 8 # a fixed number for all frequencies
+# Experiment
+cellID			= 'XXXN'
 
-exptTypes = ['GapFree','IR','CurrentStep','1sq20Hz','20Hz','30Hz','40Hz','50Hz','100Hz']
-exptType = exptTypes[-1]
+bathTemp		= 32												# degree celsius
+location		= ''
+clamp			= ''
+EorI			= ''
+unit			= ''
 
-conditions = ['Control','Gabazine']
-condition = conditions[0]
+datafile		= ''
+polygonProtocol	= ''
 
-Fs = 20
-signalScaling=1 # sometimes, the DAQ does not save current values in proper units
-baselineSubtraction = False
-baselineCriterion = 0.1 # baseline fluctuations of 10% are allowed
-baselineStart = 0
-baselineEnd = 200 # milliseconds, end of baseline time
-baselineWindow = Fs*np.arange(baselineStart,baselineEnd)
+intensity		= 100
+pulseWidth		= 2
+stimFreq		= 20 												# in Hz
+repeats			= 3
+numPulses		= 1												# a fixed number for all frequencies
 
-IR_baselineEnd = 1000 # milliseconds, end of baseline time
-IR_baselineStart = IR_baselineEnd-200
-IR_baselineWindow = np.arange(baselineStart,baselineEnd)
+exptTypes		= ['GapFree','IR','CurrentStep','1sq20Hz','FreqSweep','LTMSeq','LTMRand','convergence']
+exptType		= exptTypes[4]
 
-IR_steadystateEnd = 1300 # End of hyperpolarizing pulse to measure IR
-IR_steadstateStart = IR_steadystateEnd-200 # 
-IR_steadystateWindow = np.arange(IR_steadstateStart,IR_steadystateEnd)
+conditions		= ['Control','Gabazine']
+condition		= conditions[0]
 
-## Analysis
+# Signal parameters
+Fs						= 2e4
+signalScaling			= 1											# usually 1, but sometimes the DAQ does not save current values in proper units
+baselineSubtraction		= True
+baselineCriterion		= 0.1
+DAQfilterBand           = [0, 10000] 										# baseline fluctuations of 10% are allowed
+
+# Epochs (time in seconds)
+sweepDuration           = [0, 2.0]
+sweepBaselineEpoch      = [0, 0.2]    								# seconds, end of baseline time
+opticalStimEpoch        = [0.231, 1.231]
+IRBaselineEpoch         = [1.331, 1.531]
+IRpulseEpoch            = [1.531, 1.831]
+IRchargingPeriod        = [1.531, 1.581]
+IRsteadystatePeriod     = [1.681, 1.831]
+
+# Analysis
 # Filtering
-filter = {0:'',1:'bessel'}
-filtering = filter[0]
+filter			= {0:'',1:'bessel',2:'butter',3:'decimate'}
+filtering		= filter[0]

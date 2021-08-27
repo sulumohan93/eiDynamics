@@ -9,6 +9,7 @@ Steps
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from scipy.optimize  import curve_fit
-from eiDynamics.abf2data import abf2data
-import eiDynamics.ExperimentParameters_Default as eP
+from scipy.optimize import curve_fit
+
+from eiDynamics.abf2data                        import abf2data
+import eiDynamics.ExperimentParameters_Default  as eP

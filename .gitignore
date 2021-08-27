@@ -1,4 +1,5 @@
 # folders
+*test*
 testExamples
 testScripts
 .vscode
@@ -7,3 +8,5 @@ __pycache__
 
 # files
 *test*.*
+*.png
+*.jpg

@@ -7,8 +7,6 @@ import os
 sns.set_context("paper")
 
 
-# tag: improve feature (remove hardcoded variables, fields, and values)
-
 def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
     with open(cellpickleFile,'rb') as fin:
         x = pickle.load(fin)
@@ -16,7 +14,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
 
     # load file
     # resp = cell.response
-    resp1 = resp.query("numSquares != 1") # dropping 1sq sweeps from plots
+    resp1 = resp.query("numSquares != 1")  # dropping 1sq sweeps from plots
 
     unit = resp1.iloc[1,resp1.columns.get_loc("unit")]
 
@@ -24,9 +22,9 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     # use of tiers in pandas dataframe needs to be implemented)
     if ploty == "peakRes":
         vals = np.arange(1,9)
-        valName = "PSR Value ("+ unit + ")"
+        valName = "PSR Value (" + unit + ")"
     elif ploty == "onsetDelay":
-        vals = np.arange(9,17)
+        vals = np.arange(9, 17)
         valName = "Onset Delay (ms)"
     elif ploty == "peakTime":
         vals = np.arange(9,17)
@@ -34,27 +32,27 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     else:
         print("Don't know what to plot. Plotting peak responses.")
         vals = np.arange(1,9)
-        valName = "PSR Value ("+ unit + ")"
+        valName = "PSR Value (" + unit + ")"
 
     # Separate the identifier variables from valua variables by melting the dataframe
     respMelt = pd.melt(resp1,id_vars=["Repeat","StimFreq","EI","PatternID","numSquares"],value_vars=vals,var_name='pulseIndex', value_name=valName)
 
-    if clipSpikes and valName == "PSR Value (mV)" :
-        respMelt.loc[respMelt["PSR Value (mV)"]>=30,"PSR Value (mV)"]=30
+    if clipSpikes and valName == "PSR Value (mV)":
+        respMelt.loc[respMelt["PSR Value (mV)"] >= 30, "PSR Value (mV)"] = 30
 
     '''Initialize a grid of plots with an axis each for different fields'''
     plt.figure()
-    grid = sns.FacetGrid(respMelt,row=gridRow,col=gridColumn,hue=plotby,palette="viridis",legend_out=True)
+    grid = sns.FacetGrid(respMelt, row=gridRow, col=gridColumn, hue=plotby, palette="viridis", legend_out=True)
 
     # Draw a scatter plot to show the PSP/PSC amplitude
-    grid.map(plt.scatter,"pulseIndex",valName,marker="o")# additional kwargs for lineplot: estimator=None,lw=1,units="Repeat", not working though
+    grid.map(plt.scatter,"pulseIndex",valName,marker="o")  # additional kwargs for lineplot: estimator=None,lw=1,units="Repeat", not working though
     # grid.map(sns.scatterplot,data=respMelt,x="pulseIndex",y=valName,)#estimator=None,units="Repeat"
     grid.add_legend()
-    
+
     # # Adjust the tick positions and labels
-    grid.set(xlim=(vals[0]-1,vals[-1]+1))
-    if clipSpikes and unit=='mV':
-        grid.set(ylim=(0,1.1*np.max(respMelt[valName]))) # currently hardcoding the plot limits for clipping spikes Tag: Improve feature
+    grid.set(xlim=(vals[0] - 1, vals[-1] + 1))
+    if clipSpikes and unit == 'mV':
+        grid.set(ylim=(0, 1.1 * np.max(respMelt[valName])))  # FIXME: hardcoding the plot limits for clipping spikes
 
     # '''trying out relplot'''
     # fig = sns.relplot(
@@ -66,7 +64,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     # palette="viridis"
     # )
 
-    ## '''lineplot'''
+    # '''lineplot'''
     # grid.map(sns.lineplot,"pulseIndex",valName)
 
     # Save and show figure
@@ -93,7 +91,6 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     exptDir = os.path.dirname(cellpickleFile)
     imageFile2 = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + "-lineplot.png"
     plt.savefig(imageFile2)
-    
 
     Initialize a grid of plots with an axis each for different fields
     plt.figure()
@@ -116,5 +113,7 @@ def plotMaker(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="St
     imageFile3 = exptDir + "\\" + "plot_" + ploty + "-vs-" + plotby + "-scatlineplot.png"
     plt.savefig(imageFile3)
     plt.close('all')'''
-    
+
     return grid
+
+# FIXME: remove hardcoded variables, fields, and values

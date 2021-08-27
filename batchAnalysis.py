@@ -1,19 +1,22 @@
 import os
 import sys
+
 import analysis
-from eiDynamics.plotMaker import plotMaker
-from allCells import *
+from eiDynamics.plotMaker   import plotMaker
+from allCells               import *
+
 
 def batchAnalysis(cellDirectory):
-    fileExt = "rec.abf"
+    fileExt = ".abf"
     recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
 
     for recFile in recFiles:
         print("+++++++++++++++++++++++++++++++++++++++++++")
         print("Now analysing: ",recFile)
-        cellFile = analysis.main(recFile)
+        cellFile = analysis.main(recFile,saveTrial=True)
 
     return cellFile
+
 
 def batchPlot(cellFile):
     plotMaker(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
@@ -23,6 +26,14 @@ def batchPlot(cellFile):
     plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
     plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
     plotMaker(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+
+
+def metaAnalysis(cellDirectory):
+    pass
+
+
+def metaPlot(allCellsFile):
+    pass
 
 
 if __name__ == "__main__":
@@ -40,7 +51,7 @@ if __name__ == "__main__":
                 cf = [os.path.join(cellDirectory, pickleFile) for pickleFile in os.listdir(cellDirectory) if pickleFile.endswith("cell.pkl")]
                 print("Plotting from: ",cf[0])
                 batchPlot(cf[0])
-            except:
+            except FileNotFoundError:
                 print("Cell pickle not found. Beginning analysis.")
                 print("Now analysing cell from: ", cellDirectory)
                 cf = batchAnalysis(cellDirectory)
