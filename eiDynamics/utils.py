@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import matplotlib.pyplot as plt
 from scipy.signal import filter_design
 from scipy.signal import butter, bessel, decimate, sosfiltfilt
 
@@ -42,17 +43,16 @@ def squareSizeCalc(gridSize,objMag,frameSz=frameSize):
     return ss
 
 
-def filterData(x, filter):
-    fs = 2e4
-    if filter == 'butter':
-        sos = butter(N=2, Wn=500, fs=fs, output='sos')
+def filter_data(x, filter_type='butter',high_cutoff=2e3,sampling_freq=2e4):
+    if filter_type == 'butter':
+        sos = butter(N=2, Wn=high_cutoff, fs=sampling_freq, output='sos')
         y = sosfiltfilt(sos,x)
-    elif filter == 'bessel':
-        sos = bessel(4, 500, fs=fs, output='sos')
+    elif filter_type == 'bessel':
+        sos = bessel(4, high_cutoff, fs=sampling_freq, output='sos')
         y = sosfiltfilt(sos,x)
-    elif filter == 'decimate':
+    elif filter_type == 'decimate':
         y = decimate(x, 10, n=4)
-    elif filter == '':
+    else:
         y = x
     return y
 
@@ -62,7 +62,26 @@ def moving_average(x, w):
 
 
 def baseline(x):
-    return x - np.mean(x[:100])
+    baselineWindow = int(0.1*len(x))
+    return x - np.mean(x[:baselineWindow])
+
+
+def plot_abf_data(dataDict):
+    numChannels = len(dataDict[0])
+    fig,axs     = plt.subplots(numChannels-1,1,sharex=True)
+    for sweep in range(len(dataDict)):
+        sweepData   = dataDict[sweep]       
+        i           = 0
+        axs[0].plot(sweepData['Time'][::5],sweepData['Cmd'][::5],'r')
+        for i in range(numChannels-2):
+            axs[i+1].plot(sweepData['Time'][::5],sweepData[i][::5],'b')
+            axs[i+1].set_ylabel('Ch#'+str(i))
+
+    axs[0].set_ylabel('Ch#0 Command')
+    axs[-1].set_xlabel('Time (s)')
+    axs[-1].annotate('* Data undersampled for plotting',xy=(1.0, -0.5),xycoords='axes fraction',ha='right',va="center",fontsize=6)
+    fig.suptitle('ABF Data*')
+    plt.show()
 
 
 def findPSPstart(x):
@@ -73,8 +92,18 @@ def findPSPstart(x):
     return y[0][0]
 
 
-def epoch2dataPoints(epoch,Fs):
+def epoch_to_datapoints(epoch,Fs):
     t1 = epoch[0]
     t2 = epoch[1]
     x = np.arange(t1, t2, 1 / Fs)
     return (x * Fs).astype(int)
+
+
+def charging_membrane(t, A, tau):
+    y = A * (1 - np.exp(-t / tau))
+    return y
+
+def alpha_synapse(x,Vmax,tau):
+    a = 1/tau
+    y = Vmax*(a*x)*np.exp(1-a*x)
+    return y

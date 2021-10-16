@@ -2,8 +2,8 @@ import numpy as np
 from scipy import signal
 import pandas as pd
 
-from eiDynamics import patternIndex
-from eiDynamics import ePhysFunctions as ephysFunc
+from eidynamics import pattern_index
+from eidynamics import ephys_functions as ephysFunc
 
 
 def expt2df(expt,neuron,eP):
@@ -24,7 +24,7 @@ def expt2df(expt,neuron,eP):
         df.loc[r,"Sweep"] = int(r)  # coords
         # df.loc[r,"Coords"]=np.array(co)  # coords
         df.loc[r,"numSquares"] = int(len(co))  # numSquares
-        df.loc[r,"PatternID"] = int(patternIndex.givePatternID(co))
+        df.loc[r,"PatternID"] = int(pattern_index.givePatternID(co))
 
     df["StimFreq"] = eP.stimFreq  # stimulation pulse frequency
     df["Intensity"] = eP.intensity  # LED intensity
@@ -43,11 +43,11 @@ def expt2df(expt,neuron,eP):
     expt.Flags.update({"IRFlag": IRflag})
 
     '''Ra'''
-    df["Ra"],Raflag = ephysFunc.RaCalc(expt.recordingData,eP.clamp,eP.IRBaselineEpoch,eP.IRsteadystatePeriod)
+    df["Ra"],Raflag = ephysFunc.RaCalc(expt.recordingData,eP.clamp,eP.IRBaselineEpoch,eP.IRchargingPeriod,eP.IRsteadystatePeriod)
     expt.Flags.update({"RaFlag": Raflag})
 
     '''EPSP peaks'''
-    df_peaks,APflag = ephysFunc.pulseResponseCalc(expt,eP)
+    df_peaks,APflag = ephysFunc.pulseResponseCalc(expt.recordingData,eP)
     expt.Flags.update({"APFlag": APflag})
     df = pd.concat([df, df_peaks],axis=1)
 

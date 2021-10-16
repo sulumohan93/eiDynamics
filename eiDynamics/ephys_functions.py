@@ -3,13 +3,8 @@ import pandas as pd
 from scipy          import signal
 from scipy.optimize import curve_fit
 
-from eiDynamics.utils import epoch2dataPoints as e2dp
-
-
-def charging(t, A, tau):
-    y = A * (1 - np.exp(-t / tau))
-    return y
-
+from eidynamics.utils import epoch_to_datapoints as e2dp
+from eidynamics.utils import charging_membrane
 
 def RaCalc(recordingData, clamp, IRBaselineEpoch, IRchargingPeriod, IRsteadystatePeriod, Fs=2e4):
     ''' recordingData is the data dictionary with sweeps numbers as keys.
@@ -17,14 +12,14 @@ def RaCalc(recordingData, clamp, IRBaselineEpoch, IRchargingPeriod, IRsteadystat
 
     RaTrend = []
     for s in recordingData.values():
-        cmdSig      = s['cmd']
+        cmdSig      = s['Cmd']
         resSig      = s[0]
         time        = s['Time']
 
         chargeTime  = time[e2dp(IRchargingPeriod,Fs)] - IRchargingPeriod[0]
         chargeRes   = resSig[e2dp(IRchargingPeriod,Fs)]
 
-        popt,_      = curve_fit(charging,chargeTime,chargeRes)
+        popt,_      = curve_fit(charging_membrane,chargeTime,chargeRes)
 
         RaTrend.append(popt[1])
 
@@ -43,7 +38,7 @@ def IRcalc(recordingData,clamp,IRBaselineEpoch,IRsteadystatePeriod,Fs=2e4):
 
     IRtrend = []
     for s in recordingData.values():
-        cmdSig = s['cmd']
+        cmdSig = s['Cmd']
         ss1_cmd = np.mean(cmdSig[e2dp(IRBaselineEpoch,Fs)])
         ss2_cmd = np.mean(cmdSig[e2dp(IRsteadystatePeriod,Fs)])
         delCmd = ss2_cmd - ss1_cmd
@@ -69,25 +64,24 @@ def IRcalc(recordingData,clamp,IRBaselineEpoch,IRsteadystatePeriod,Fs=2e4):
     return IRtrend, IRflag
 
 
-def pulseResponseCalc(expt,eP):
+def pulseResponseCalc(recordingData,eP):
     pulsePeriods = []
     PeakResponses = []
-
     df_peaks = pd.DataFrame()
 
     APflag = bool(0)
 
-    for sweepID,sweep in expt.recordingData.items():
+    for sweepID,sweep in recordingData.items():
         ch0_cell = sweep[0]
         ch1_frameTTL = sweep[1]
         ch2_photodiode = sweep[2]
 
         # slice out the pulse periods
-        sf = eP.stimFreq  # pulse frequency
-        IPI = int(20 * (1000 / sf))  # inter-pulse interval
+        stimfreq = eP.stimFreq  # pulse frequency
+        IPI = int(20 * (1000 / stimfreq))  # inter-pulse interval
 
         # pulse start times
-        z = np.where(ch2_photodiode > 0.5 * np.max(ch2_photodiode), 1, 0)  # z is the binarized photodiode signal
+        z = np.where(ch2_photodiode > 0.5 * np.max(ch2_photodiode[4800:6000]), 1, 0)  # z is the binarized photodiode signal
         peaks_pd, _ = signal.find_peaks(z, distance=150, height=0.5)  # at least 7.5 ms apart pulses
         widths = signal.peak_widths(z, peaks_pd, rel_height=1.0)
         pst = widths[2]

@@ -46,6 +46,7 @@ location		= ''
 clamp			= ''
 EorI			= ''
 unit			= ''
+clampPotential  = ''
 
 datafile		= ''
 polygonProtocol	= ''
@@ -66,8 +67,8 @@ condition		= conditions[0]
 Fs						= 2e4
 signalScaling			= 1											# usually 1, but sometimes the DAQ does not save current values in proper units
 baselineSubtraction		= True
-baselineCriterion		= 0.1
-DAQfilterBand           = [0, 10000] 										# baseline fluctuations of 10% are allowed
+baselineCriterion		= 0.1										# baseline fluctuations of 10% are allowed
+DAQfilterBand           = [0, 10000]
 
 # Epochs (time in seconds)
 sweepDuration           = [0, 2.0]
@@ -77,8 +78,10 @@ IRBaselineEpoch         = [1.331, 1.531]
 IRpulseEpoch            = [1.531, 1.831]
 IRchargingPeriod        = [1.531, 1.581]
 IRsteadystatePeriod     = [1.681, 1.831]
+interSweepInterval      = 30                                        # seconds
 
 # Analysis
 # Filtering
-filter			= {0:'',1:'bessel',2:'butter',3:'decimate'}
-filtering		= filter[0]
+filters			        = {0:'',1:'bessel',2:'butter',3:'decimate'}
+filter                  = filters[0]
+filterHighCutoff        = 2e4

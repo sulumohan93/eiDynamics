@@ -14,11 +14,18 @@ allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-06-09_G337\\3373\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-06_G234\\2342\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-04_G233\\2331\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-07-09_G353\\3531\\",
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3881\\"
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3882\\"
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3871\\"
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3872\\"
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-08-10_G378\\3781\\"
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-08-11_G379\\3791\\"]
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3881\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3882\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3871\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3872\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-08-10_G378\\3781\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-08-11_G379\\3791\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5211\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5212\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\"]
+
+ 
+testCells =            ["Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\5211\\",
+                        "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3871\\"]
 
 allCellsResponseFile = "Lab\\Projects\\EI_Dynamics\\AnalysisFiles\\allCells.xslx"

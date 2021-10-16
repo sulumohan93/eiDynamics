@@ -2,12 +2,12 @@ import os
 import sys
 
 import analysis
-from eiDynamics.plotMaker   import plotMaker
-from allCells               import *
+from eidynamics.plotmaker   import makeplots
+from allcells               import *
 
 
 def batchAnalysis(cellDirectory):
-    fileExt = ".abf"
+    fileExt = "rec.abf"
     recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
 
     for recFile in recFiles:
@@ -19,13 +19,13 @@ def batchAnalysis(cellDirectory):
 
 
 def batchPlot(cellFile):
-    plotMaker(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    plotMaker(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    plotMaker(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    makeplots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
+    makeplots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+    makeplots(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
 
-    plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    plotMaker(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    plotMaker(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    makeplots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
+    makeplots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+    makeplots(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
 
 
 def metaAnalysis(cellDirectory):
@@ -44,6 +44,14 @@ if __name__ == "__main__":
             cf = batchAnalysis(cellDirectory)
             print(cf)
             batchPlot(cf)
+    elif "codetest" in sys.argv:
+        print("Checking if analysis pipline is working...")
+        for cellDirectory in testCells:
+            print("Now analysing cell from: ", cellDirectory)
+            cf = batchAnalysis((cloudDataPath+cellDirectory))
+            print(cf)
+            batchPlot(cf)
+            print('All Tests Passed!')
     else:
         for cellDirectory in allCells:
             try:
