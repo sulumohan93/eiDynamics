@@ -126,11 +126,15 @@ class Neuron:
         exptDict.update(exptDict)
         return exptDict
 
-    def addCell2db(self):
-        tempDF      = pd.read_excel(allCellsResponseFile)
-        outDF       = pd.concat([self.response,tempDF],axis=1)
+    @staticmethod
+    def addCell2db(cellFile):
+        cell        = Neuron.loadCell(cellFile)
+        allCellFile = os.path.join(projectPathRoot,allCellsResponseFile)
+        tempDF      = pd.read_excel(allCellFile)
+        outDF       = pd.concat([cell.response,tempDF],axis=1)
         outDF       = outDF.drop_duplicates()
         outDF.to_excel(allCellsResponseFile)
+        print("Cell experiment data has been added to {}".format(allCellsResponseFile))
 
     def make_spot_profile(self,exptObj1sq):
         if not exptObj1sq.exptType == '1sq20Hz':
@@ -150,7 +154,7 @@ class Neuron:
         secondPulseTime         = int(Fs*(exptObj1sq.stimStart + IPI)) # 5628 sample points
 
         # Get the synaptic delay from the average responses of all the spots
-        avgResponseStartTime    = PSP_start_time_1sq(cell)   # 0.2365 seconds
+        avgResponseStartTime    = PSP_start_time_1sq(cell,stimStartTime=exptObj1sq.stimStart,Fs=Fs)   # 0.2365 seconds
         avgSecondResponseStartTime = avgResponseStartTime + IPI # 0.2865 seconds
         avgSynapticDelay        = avgResponseStartTime-exptObj1sq.stimStart # ~0.0055 seconds
 

@@ -8,34 +8,48 @@ from eidynamics import ephys_functions as ephysFunc
 
 def expt2df(expt,neuron,eP):
     '''read experiment type and returns experiment object'''
-    numSweeps = len(expt.stimCoords)
+    numSweeps       = len(expt.stimCoords)
+    numRepeats      = eP.repeats
 
     # create the dataframe that stores analyzed experiment results
-    df = pd.DataFrame()
-    features = ["Sweep","Repeat","PatternID","numSquares","Intensity","pulseWidth","StimFreq","EI","unit"]  # removed "coords" from columns
-    df = pd.DataFrame(columns=features)
-    df.astype({"Sweep":'int8',"Repeat":"int8","PatternID":"int8",
-               "numSquares":"int8","Intensity":"int8","pulseWidth":"int8",
-               "StimFreq":"int8","EI":"string"})  # "Coords":'object',
+    features        = ["CellID","ExptType","Condition","EI","StimFreq","NumSquares","PulseWidth","PatternID","Intensity","Sweep","Repeat","Unit"]
+    df              = pd.DataFrame(columns=features)
+    df.astype({
+                "CellID"    : "string",
+                "ExptType"  : "string",
+                "Condition" : "string",
+                "EI"        : "string",
+                "StimFreq"  : 'int8',
+                "NumSquares": "int8",
+                "PulseWidth": "int8",
+                "PatternID" : "string",
+                "Intensity" : "int8",
+                "Sweep"     : "int8",
+                "Repeat"    : "int8",
+                "Unit"      : "string"}
+            )  # "Coords":'object',
 
+    
     # fill in columns for experiment parameters,
     # they will serve as axes for sorting analysed data in plots
     for r,co in expt.stimCoords.items():
-        df.loc[r,"Sweep"] = int(r)  # coords
-        # df.loc[r,"Coords"]=np.array(co)  # coords
-        df.loc[r,"numSquares"] = int(len(co))  # numSquares
-        df.loc[r,"PatternID"] = int(pattern_index.get_patternID(co))
+        df.loc[r,"Sweep"]      = int(r)
+        df.loc[r,"NumSquares"] = int(len(co))  # numSquares
+        df.loc[r,"PatternID"]  = int(pattern_index.get_patternID(co))
 
-    df["StimFreq"] = eP.stimFreq  # stimulation pulse frequency
+    repeatSeq       = (np.concatenate([np.linspace(1, 1, int(numSweeps / numRepeats)),
+                                       np.linspace(2, 2, int(numSweeps / numRepeats)),
+                                       np.linspace(3, 3, int(numSweeps / numRepeats))])).astype(int)
+
+    df["CellID"]    = str(eP.cellID)
+    df["ExptType"]  = str(eP.exptType)
+    df["Condition"] = str(eP.condition)
+    df["EI"]        = str(eP.EorI)
+    df["StimFreq"]  = eP.stimFreq  # stimulation pulse frequency
+    df["PulseWidth"]= eP.pulseWidth
     df["Intensity"] = eP.intensity  # LED intensity
-    repeatSeq = (np.concatenate([np.linspace(1, 1, int(numSweeps / eP.repeats)), np.linspace(2, 2, int(numSweeps / eP.repeats)), np.linspace(3, 3, int(numSweeps / eP.repeats))])).astype(int)
-    df["Repeat"] = repeatSeq[:numSweeps]
-    df["pulseWidth"] = eP.pulseWidth
-    df["EI"] = str(eP.EorI)
-    df["unit"] = str(eP.unit)
-    df["cellID"] = str(eP.cellID)
-    df.astype({"unit":'string'})
-    df.astype({"EI":'string'})
+    df["Repeat"]    = repeatSeq[:numSweeps]    
+    df["Unit"]      = str(eP.unit)
 
     # Add analysed data columns
     '''IR'''

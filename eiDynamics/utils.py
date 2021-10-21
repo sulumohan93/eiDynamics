@@ -118,25 +118,33 @@ def alpha_synapse(x,Vmax,tau):
     return y
 
 
-def PSP_start_time_1sq(response_array_1sq,Fs=2e4):
+def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
     '''
     Input: nxm array where n is number of frames, m is datapoints per sweep
     '''
     if len(response_array_1sq.shape)==1:
-        avgAllSpots     = response_array_1sq[:6000]
+        avgAllSpots     = (baseline(response_array_1sq))[:5600]
     else:
-        avgAllSpots     = np.mean(response_array_1sq[:,:6000],axis=0) #clipping signal for speed
+        avgAllSpots     = np.mean(response_array_1sq[:,:5600],axis=0) #clipping signal for speed
+    stimStart           = int(Fs*stimStartTime)
     avgAllSpots         = filter_data(avgAllSpots, filter_type='butter',high_cutoff=300,sampling_freq=Fs)
     movAvgAllSpots      = moving_average(np.append(avgAllSpots,np.zeros(19)),20)
     response            = movAvgAllSpots - avgAllSpots
-    responseSign        = np.sign(response)
-    peaks               = find_peaks(responseSign[4600:],distance=100,width=100)
-    zeroCrossingPoint   = peaks[1]['left_ips']
-
-    PSPStartTime_1sq    = 4600 + zeroCrossingPoint
-    PSPStartTime_1sq    = PSPStartTime_1sq/Fs
+    stdDevResponse      = np.std(response[:stimStart])
+    responseSign        = np.sign(response-stdDevResponse)
+    peaks               = find_peaks(responseSign[stimStart:],distance=100,width=50)
     
-    return PSPStartTime_1sq[0]
+    zeroCrossingPoint   = peaks[1]['left_ips']
+    
+    PSPStartTime_1sq    = stimStart + zeroCrossingPoint
+    PSPStartTime_1sq    = PSPStartTime_1sq/Fs
+
+    try:
+        synDelay        = Fs*(PSPStartTime_1sq[0] - stimStartTime)
+    except IndexError as err:
+        synDelay        = np.NaN
+    
+    return synDelay
 
 
 def delayed_alpha_function(t,A,tau,delta):

@@ -2,30 +2,35 @@ import os
 import sys
 
 import analysis
-from eidynamics.plotmaker           import make_plots
-from allcells                       import *
+from eidynamics.plotmaker   import make_plots
+from eidynamics             import ephys_classes
+from allcells               import *
 
 
-def batchAnalysis(cellDirectory):
+def batchAnalysis(cellDirectory,add_cell_to_database=False):
+    print("++++++++++| Analyzing New Cell from: {} |++++++++++".format(cellDirectory))
     fileExt = "rec.abf"
     recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
 
     for recFile in recFiles:
-        print("+++++++++++++++++++++++++++++++++++++++++++")
+        
         print("Now analysing: ",recFile)
         cellFile = analysis.main(recFile,saveTrial=True)
 
+    if add_cell_to_database:
+        ephys_classes.Neuron.addCell2db(cellFile)
+    
     return cellFile
 
 
 def batchPlot(cellFile):
-    make_plots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    make_plots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    make_plots(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    make_plots(cellFile, ploty="PeakRes",  gridRow="NumSquares", plotby="EI",        clipSpikes=True)
+    make_plots(cellFile, ploty="PeakRes",  gridRow="NumSquares", plotby="PatternID", clipSpikes=True)
+    make_plots(cellFile, ploty="PeakRes",  gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
 
-    make_plots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    make_plots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    make_plots(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    make_plots(cellFile, ploty="PeakTime", gridRow="NumSquares", plotby="EI",        clipSpikes=True)
+    make_plots(cellFile, ploty="PeakTime", gridRow="NumSquares", plotby="PatternID", clipSpikes=True)
+    make_plots(cellFile, ploty="PeakTime", gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
 
 
 def metaAnalysis(cellFile):
@@ -40,15 +45,13 @@ if __name__ == "__main__":
     if "analyse" in sys.argv:
         print("Analysing recordings...")
         for cellDirectory in allCells:
-            print("Now analysing cell from: ", cellDirectory)
-            cf = batchAnalysis(cellDirectory)
-            print(cf)
+            cf = batchAnalysis(cellDirectory,add_cell_to_database=True)
+            print("Data saved in cell file: ",cf)
             batchPlot(cf)
     elif "codetest" in sys.argv:
         print("Checking if analysis pipline is working...")
         for cellDirectory in testCells:
-            print("Now analysing cell from: ", cellDirectory)
-            cf = batchAnalysis((cloudDataPath+cellDirectory))
+            cf = batchAnalysis((projectPathRoot+cellDirectory))
             print(cf)
             batchPlot(cf)
             print('All Tests Passed!')
@@ -61,7 +64,6 @@ if __name__ == "__main__":
                 batchPlot(cf[0])
             except FileNotFoundError:
                 print("Cell pickle not found. Beginning analysis.")
-                print("Now analysing cell from: ", cellDirectory)
                 cf = batchAnalysis(cellDirectory)
                 print(cf)
                 batchPlot(cf)

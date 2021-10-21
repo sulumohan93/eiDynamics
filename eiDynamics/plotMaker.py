@@ -7,26 +7,26 @@ import os
 sns.set_context("paper")
 
 
-def make_plots(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
+def make_plots(cellpickleFile,ploty="PeakRes",gridRow="NumSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
     with open(cellpickleFile,'rb') as fin:
         x = pickle.load(fin)
     resp = x.response
 
     # load file
     # resp = cell.response
-    resp1 = resp.query("numSquares != 1")  # dropping 1sq sweeps from plots
+    resp1 = resp.query("NumSquares != 1")  # dropping 1sq sweeps from plots
 
-    unit = resp1.iloc[1,resp1.columns.get_loc("unit")]
+    unit = resp1.iloc[1,resp1.columns.get_loc("Unit")]
 
     # tag: improve feature (to permanently remove hard coding the indices of calculated values,
     # use of tiers in pandas dataframe needs to be implemented)
-    if ploty == "peakRes":
+    if ploty == "PeakRes":
         vals = np.arange(1,9)
         valName = "PSR Value (" + unit + ")"
-    elif ploty == "onsetDelay":
+    elif ploty == "OnsetDelay":
         vals = np.arange(9, 17)
         valName = "Onset Delay (ms)"
-    elif ploty == "peakTime":
+    elif ploty == "PeakTime":
         vals = np.arange(9,17)
         valName = "Time of Peak (ms)"
     else:
@@ -35,7 +35,7 @@ def make_plots(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="S
         valName = "PSR Value (" + unit + ")"
 
     # Separate the identifier variables from valua variables by melting the dataframe
-    respMelt = pd.melt(resp1,id_vars=["Repeat","StimFreq","EI","PatternID","numSquares"],value_vars=vals,var_name='pulseIndex', value_name=valName)
+    respMelt = pd.melt(resp1,id_vars=["Repeat","StimFreq","EI","PatternID","NumSquares"],value_vars=vals,var_name='PulseIndex', value_name=valName)
 
     if clipSpikes and valName == "PSR Value (mV)":
         respMelt.loc[respMelt["PSR Value (mV)"] >= 30, "PSR Value (mV)"] = 30
@@ -45,7 +45,7 @@ def make_plots(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="S
     grid = sns.FacetGrid(respMelt, row=gridRow, col=gridColumn, hue=plotby, palette="viridis", legend_out=True)
 
     # Draw a scatter plot to show the PSP/PSC amplitude
-    grid.map(plt.scatter,"pulseIndex",valName,marker="o")  # additional kwargs for lineplot: estimator=None,lw=1,units="Repeat", not working though
+    grid.map(plt.scatter,"PulseIndex",valName,marker="o")  # additional kwargs for lineplot: estimator=None,lw=1,units="Repeat", not working though
     # grid.map(sns.scatterplot,data=respMelt,x="pulseIndex",y=valName,)#estimator=None,units="Repeat"
     grid.add_legend()
 

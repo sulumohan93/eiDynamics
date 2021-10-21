@@ -1,6 +1,16 @@
 # cell directories
+import os
+
 NCBSDataPath = "\\storage.ncbs.res.in\\adityaa\\"
 cloudDataPath = "C:\\Users\\adity\\OneDrive\\NCBS\\"
+rigDataPath = "C:\\Users\\aditya\\OneDrive\\NCBS\\"
+
+if os.path.exists(NCBSDataPath):
+    projectPathRoot = NCBSDataPath
+elif os.path.exists(cloudDataPath):
+    projectPathRoot = cloudDataPath
+elif os.path.exists(rigDataPath):
+    projectPathRoot = rigDataPath
 
 allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-06-09_G337\\3373\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-06-04_G340\\3401\\",
