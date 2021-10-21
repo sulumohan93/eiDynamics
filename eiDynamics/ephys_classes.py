@@ -3,11 +3,14 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+from scipy.optimize  import curve_fit
 
 # EI Dynamics module
 from eidynamics.abf_to_data         import abf_to_data
 from eidynamics.expt_to_dataframe   import expt2df
 from eidynamics.ephys_functions     import IRcalc
+from eidynamics.utils               import delayed_alpha_function,PSP_start_time_1sq
+from eidynamics                     import pattern_index
 from eidynamics.errors              import *
 from allcells                       import *
 
@@ -32,22 +35,35 @@ class Neuron:
             print(err)
 
         # derived in order: neuron.experiment -> neuron.response -> neuron.properties
-        self.experiment = {}
-        self.response   = pd.DataFrame()
-        self.properties = {}
+        self.experiment         = {}
+        self.response           = pd.DataFrame()
+        self.properties         = {}
+        self.expectedResponse   = {}
+        self.spotExpectedDict   = {}
+        self.singleSpotDataParsed     = False
+        self.spotStimFreq       = 20
 
     def addExperiment(self,datafile,coordfile,exptParams):
         """
         A function that takes filenames and creates an experiment object for a cell object
         """
         newExpt         = Experiment(exptParams,datafile,coordfile)
+        newExpt.analyze_experiment(self,exptParams)
+        self.updateExperiment(newExpt,self.experiment,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
 
-        ## Method 1
-        newExptObj      = newExpt.analyzeExperiment(self,exptParams)
-        self.updateExperiment(newExptObj,self.experiment,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
-        # # TRY Method 2
-        # newExpt.analyzeExperiment(self,exptParams)
-        # self.updateExperiment(newExpt,self.experiment,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
+        if exptParams.exptType == '1sq20Hz':
+            self.singleSpotDataParsed = True
+            self.spotStimFreq         = exptParams.stimFreq
+            _1sqExpectedDict = self.make_spot_profile(newExpt)
+            # self.spotExpectedDict.update({exptParams.condition:{exptParams.stimFreq:{exptParams.EorI:_1sqExpectedDict}}})
+            self.updateExperiment(_1sqExpectedDict, self.spotExpectedDict, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
+
+        if self.singleSpotDataParsed == True and exptParams.exptType == 'FreqSweep':
+            spotExpectedDict_1sq = self.spotExpectedDict[exptParams.condition]['1sq20Hz'][self.spotStimFreq][exptParams.EorI]
+            frameExpectedDict    = self.find_frame_expected(newExpt,spotExpectedDict_1sq)
+            self.updateExperiment(frameExpectedDict, self.expectedResponse, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
+
+        return self
 
     def __iter__(self):
         return self.experiment.iteritems()
@@ -116,6 +132,91 @@ class Neuron:
         outDF       = outDF.drop_duplicates()
         outDF.to_excel(allCellsResponseFile)
 
+    def make_spot_profile(self,exptObj1sq):
+        if not exptObj1sq.exptType == '1sq20Hz':
+            raise ParameterMismatchError(message='Experiment object has to be a 1sq experiment')
+
+        Fs                      = exptObj1sq.Fs
+        IPI                     = exptObj1sq.IPI # 0.05 seconds
+        numSweeps               = exptObj1sq.numSweeps
+
+        # Get trial averaged stim and response traces for every spot
+        pd                      = exptObj1sq.extract_trial_averaged_data(channels=[2])[2] # 45 x 40000
+        cell                    = exptObj1sq.extract_trial_averaged_data(channels=[0])[0] # 45 x 40000
+        # Get a dict of all spots
+        spotCoords              = dict([(k, exptObj1sq.stimCoords[k]) for k in range(1,1+int(exptObj1sq.numSweeps/exptObj1sq.numRepeats))])
+        
+        firstPulseTime          = int(Fs*(exptObj1sq.stimStart)) # 4628 sample points
+        secondPulseTime         = int(Fs*(exptObj1sq.stimStart + IPI)) # 5628 sample points
+
+        # Get the synaptic delay from the average responses of all the spots
+        avgResponseStartTime    = PSP_start_time_1sq(cell)   # 0.2365 seconds
+        avgSecondResponseStartTime = avgResponseStartTime + IPI # 0.2865 seconds
+        avgSynapticDelay        = avgResponseStartTime-exptObj1sq.stimStart # ~0.0055 seconds
+
+        spotExpectedDict        = {}
+
+        for i in range(len(spotCoords)):
+            spotPD_trialAvg               = pd[i,int(Fs*avgResponseStartTime):int(Fs*avgSecondResponseStartTime)] # 1 x 1000
+            spotCell_trialAVG_pulse2pulse = cell[i,firstPulseTime:secondPulseTime+200]
+
+            t                   = np.linspace(0,IPI+0.01,len(spotCell_trialAVG_pulse2pulse)) # seconds at Fs sampling
+            T                   = np.linspace(0,0.4,int(0.4*Fs)) # seconds at Fs sampling
+            popt,_              = curve_fit(delayed_alpha_function,t,spotCell_trialAVG_pulse2pulse,p0=([0.5,0.05,0.005])) #p0 are initial guesses A=0.5 mV, tau=50ms,delta=5ms
+            A,tau,delta         = popt
+            fittedSpotRes       = delayed_alpha_function(T,*popt) # 400 ms = 8000 datapoints long predicted trace from the fit for the spot, not really usable
+            
+            spotExpectedDict[spotCoords[i+1][0]] = [avgSynapticDelay,A,tau,delta,spotCell_trialAVG_pulse2pulse,fittedSpotRes]
+        
+        all1sqAvg                     = np.mean(cell[:,firstPulseTime:secondPulseTime+200],axis=0)
+        popt,_                        = curve_fit(delayed_alpha_function,t,all1sqAvg,p0=([0.5,0.05,0.005])) #p0 are initial guesses A=0.5 mV, tau=50ms,delta=5ms
+        A,tau,delta                   = popt
+        all1sqAvg_fittedSpotRes       = delayed_alpha_function(T,*popt)
+        spotExpectedDict['1sqAvg']    = [avgSynapticDelay,A,tau,delta,all1sqAvg,all1sqAvg_fittedSpotRes]
+
+        return spotExpectedDict
+
+    def find_frame_expected(self,exptObj,spotExpectedDict_1sq):
+        stimFreq        = exptObj.stimFreq
+        IPI             = exptObj.IPI # IPI of current freq sweep experiment
+        numPulses       = exptObj.numPulses
+        numSweeps       = exptObj.numSweeps
+        numRepeats      = exptObj.numRepeats
+        cell            = exptObj.extract_trial_averaged_data(channels=[0])[0][:,:20000] # 8 x 40000
+        stimCoords      = dict([(k, exptObj.stimCoords[k]) for k in range(1,1+int(numSweeps/numRepeats))]) # {8 key dict}
+        stimStart       = 0.2314
+        Fs              = 2e4
+    
+        frameExpected   = {}
+        for i in range(len(stimCoords)):
+            coordsTemp = stimCoords[i+1] # nd array of spot coords
+            frameID    = pattern_index.get_patternID(coordsTemp)
+            numSq      = len(coordsTemp)
+            firstPulseExpected = np.zeros((int(Fs*(IPI+0.01))))
+            firstPulseFitted   = np.zeros((int(Fs*(0.4))))# added 0.01 second = 10 ms to IPI, check line 41,43,68,69
+            for spot in coordsTemp:            
+                spotExpected        = spotExpectedDict_1sq[spot][4]
+                spotFitted          = spotExpectedDict_1sq['1sqAvg'][5]
+                firstPulseExpected  += spotExpected[:len(firstPulseExpected)]
+                firstPulseFitted    += spotFitted[:len(firstPulseFitted)]
+            avgSynapticDelay    = spotExpectedDict_1sq[spot][0]
+            expectedResToPulses = np.zeros(len(cell[0,:]))
+            fittedResToPulses = np.zeros(len(cell[0,:]))
+            t1 = int(Fs*stimStart)
+            for k in range(numPulses):
+                
+                t2 = t1+int(Fs*IPI+avgSynapticDelay)
+                T2 = t1+int(0.4*Fs)
+                window1 = range(t1,t2)
+                window2 = range(t1,T2)
+                expectedResToPulses[window1] += firstPulseExpected[:len(window1)]
+                fittedResToPulses[window2]   += firstPulseFitted[:len(window2)]
+                t1 = t1+int(Fs*IPI)
+
+            frameExpected[frameID] = [numSq,stimFreq,exptObj.stimIntensity,exptObj.pulseWidth,expectedResToPulses,fittedResToPulses,firstPulseFitted,firstPulseExpected]
+        
+        return frameExpected
+
 
 class Experiment:
     '''All different kinds of experiments conducted on a patched
@@ -145,7 +246,7 @@ class Experiment:
         self.stimCoords     = Coords(coordfile).coords if coordfile else ''
 
         self.numSweeps      = len(self.recordingData.keys())
-        self.sweepIndex     = 0  # start of the iterator over sweeps        
+        self.sweepIndex     = 0  # start of the iterator over sweeps
 
     def __iter__(self):
         return self
@@ -157,7 +258,36 @@ class Experiment:
         self.sweepIndex     += 1
         return self.recordingData[currentSweepIndex]
 
-    def analyzeExperiment(self,neuron,exptParams):
+    def extract_channelwise_data(self,channels=[0,1,2,'Cmd','Time']):
+        '''
+        Returns a dictionary holding channels as keys,
+        and sweeps as keys in an nxm 2-d array format where n is number of sweeps
+        and m is number of datapoints in the recording per sweep.
+        '''
+        channelDict = {}
+        tempChannelData = np.zeros((self.numSweeps,len(self.recordingData[0][0])))
+        for ch in channels:
+            for i in range(self.numSweeps):
+                tempChannelData[i,:] = self.recordingData[i][ch]
+            channelDict[ch] = tempChannelData
+            tempChannelData = 0.0*tempChannelData            
+        return channelDict
+
+    def extract_trial_averaged_data(self,channels=[0]):
+        '''
+        Returns a dictionary holding channels as keys,
+        and trial averaged sweeps as an nxm 2-d array where n is number of patterns
+        and m is number of datapoints in the recording per sweep.
+        '''
+        chData = self.extract_channelwise_data(channels=channels)
+        chMean = {}
+        for ch in channels:
+            chData_temp = np.reshape(chData[ch],(self.numRepeats,int(self.numSweeps/self.numRepeats),-1))
+            chMean[ch] = np.mean(chData_temp,axis=0)
+
+        return chMean
+
+    def analyze_experiment(self,neuron,exptParams):
 
         if self.exptType == 'sealTest':
             # Call a function to calculate access resistance from recording
@@ -197,9 +327,11 @@ class Experiment:
             self.polygonProtocolFile= ep.polygonProtocol
             self.numRepeats         = ep.repeats
             self.numPulses          = ep.numPulses
-            self.ISI                = round(1000 / ep.stimFreq, 1)
+            self.IPI                = 1 / ep.stimFreq
+            self.stimStart          = ep.opticalStimEpoch[0]
             self.Fs                 = ep.Fs
             self.exptType           = ep.exptType
+            self.condition          = ep.condition
             self.unit = 'pA' if self.clamp == 'VC' else 'mV' if self.clamp == 'CC' else 'a.u.'
         except Exception as err:
             raise ParameterMismatchError(message=err)

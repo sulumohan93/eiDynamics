@@ -10,7 +10,7 @@ import imp
 
 from eidynamics             import ephys_classes
 from eidynamics.errors      import *
-from eidynamics.plotmaker   import makeplots
+from eidynamics.plotmaker   import make_plots
 
 
 def main(inputFile, saveTrial=False, makePlots=False):
@@ -80,16 +80,15 @@ def main(inputFile, saveTrial=False, makePlots=False):
 
     # Plots
     if makePlots:
-        makeplots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="EI",         clipSpikes=True)
-        makeplots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="PatternID",  clipSpikes=True)
-        makeplots(cellFile, ploty="peakRes", gridRow="PatternID",  plotby="Repeat",     clipSpikes=True)
+        make_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="EI",         clipSpikes=True)
+        make_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="PatternID",  clipSpikes=True)
+        make_plots(cellFile, ploty="peakRes", gridRow="PatternID",  plotby="Repeat",     clipSpikes=True)
 
-        makeplots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="EI",        clipSpikes=True)
-        makeplots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="PatternID", clipSpikes=True)
-        makeplots(cellFile, ploty="peakTime", gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
+        make_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="EI",        clipSpikes=True)
+        make_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="PatternID", clipSpikes=True)
+        make_plots(cellFile, ploty="peakTime", gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
 
     return cellFile
-
 
 if __name__ == "__main__":
     main(sys.argv[1])

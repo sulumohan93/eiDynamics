@@ -1,8 +1,10 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+from numpy.ma import flatnotmasked_contiguous
 from scipy.signal import filter_design
 from scipy.signal import butter, bessel, decimate, sosfiltfilt
+from scipy.signal import find_peaks, peak_widths
 
 frameSize = [13032.25, 7419.2]  # Aug 2021 calibration
 
@@ -84,12 +86,18 @@ def plot_abf_data(dataDict):
     plt.show()
 
 
-def findPSPstart(x):
-    y = baseline(x)
-    stdX = np.std(y[:100])
-    movAvgX = moving_average(y,10)
-    y = np.where(movAvgX > 3. * stdX)
-    return y[0][0]
+def find_resposne_start(x,method='stdDev'):
+    if method == 'stdDev':    
+        y = np.abs(baseline(x))
+        stdX = np.std(y[:4600])
+        movAvgX = moving_average(y,10)
+        z = np.where(movAvgX > 5. * stdX)
+        return z[0][0]
+    elif method == 'slope':
+        y = np.abs(baseline(x))
+        dy = np.diff(y,n=2) # using second derivative
+        z = np.where(dy==np.max(dy))
+        return z[0][0]
 
 
 def epoch_to_datapoints(epoch,Fs):
@@ -103,7 +111,38 @@ def charging_membrane(t, A, tau):
     y = A * (1 - np.exp(-t / tau))
     return y
 
+
 def alpha_synapse(x,Vmax,tau):
     a = 1/tau
     y = Vmax*(a*x)*np.exp(1-a*x)
+    return y
+
+
+def PSP_start_time_1sq(response_array_1sq,Fs=2e4):
+    '''
+    Input: nxm array where n is number of frames, m is datapoints per sweep
+    '''
+    if len(response_array_1sq.shape)==1:
+        avgAllSpots     = response_array_1sq[:6000]
+    else:
+        avgAllSpots     = np.mean(response_array_1sq[:,:6000],axis=0) #clipping signal for speed
+    avgAllSpots         = filter_data(avgAllSpots, filter_type='butter',high_cutoff=300,sampling_freq=Fs)
+    movAvgAllSpots      = moving_average(np.append(avgAllSpots,np.zeros(19)),20)
+    response            = movAvgAllSpots - avgAllSpots
+    responseSign        = np.sign(response)
+    peaks               = find_peaks(responseSign[4600:],distance=100,width=100)
+    zeroCrossingPoint   = peaks[1]['left_ips']
+
+    PSPStartTime_1sq    = 4600 + zeroCrossingPoint
+    PSPStartTime_1sq    = PSPStartTime_1sq/Fs
+    
+    return PSPStartTime_1sq[0]
+
+
+def delayed_alpha_function(t,A,tau,delta):
+    tdel = np.zeros(int(2e4*delta))
+    T   = np.append(tdel,t)
+    T = T[:len(t)]
+    a   = 1/tau
+    y   = A*(a*T)*np.exp(1-a*T)
     return y

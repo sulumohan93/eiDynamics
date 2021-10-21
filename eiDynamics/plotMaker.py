@@ -7,7 +7,7 @@ import os
 sns.set_context("paper")
 
 
-def makeplots(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
+def make_plots(cellpickleFile,ploty="peakRes",gridRow="numSquares",gridColumn="StimFreq",plotby="EI",clipSpikes=False):
     with open(cellpickleFile,'rb') as fin:
         x = pickle.load(fin)
     resp = x.response

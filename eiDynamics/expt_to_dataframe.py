@@ -24,7 +24,7 @@ def expt2df(expt,neuron,eP):
         df.loc[r,"Sweep"] = int(r)  # coords
         # df.loc[r,"Coords"]=np.array(co)  # coords
         df.loc[r,"numSquares"] = int(len(co))  # numSquares
-        df.loc[r,"PatternID"] = int(pattern_index.givePatternID(co))
+        df.loc[r,"PatternID"] = int(pattern_index.get_patternID(co))
 
     df["StimFreq"] = eP.stimFreq  # stimulation pulse frequency
     df["Intensity"] = eP.intensity  # LED intensity

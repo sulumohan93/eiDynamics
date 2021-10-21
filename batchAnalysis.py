@@ -2,8 +2,8 @@ import os
 import sys
 
 import analysis
-from eidynamics.plotmaker   import makeplots
-from allcells               import *
+from eidynamics.plotmaker           import make_plots
+from allcells                       import *
 
 
 def batchAnalysis(cellDirectory):
@@ -19,16 +19,16 @@ def batchAnalysis(cellDirectory):
 
 
 def batchPlot(cellFile):
-    makeplots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    makeplots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    makeplots(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    make_plots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="EI",clipSpikes=True)
+    make_plots(cellFile,ploty="peakRes",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+    make_plots(cellFile,ploty="peakRes",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
 
-    makeplots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
-    makeplots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
-    makeplots(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
+    make_plots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="EI",clipSpikes=True)
+    make_plots(cellFile,ploty="peakTime",gridRow="numSquares",plotby="PatternID",clipSpikes=True)
+    make_plots(cellFile,ploty="peakTime",gridRow="PatternID",plotby="Repeat",clipSpikes=True)
 
 
-def metaAnalysis(cellDirectory):
+def metaAnalysis(cellFile):
     pass
 
 
