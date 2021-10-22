@@ -8,7 +8,7 @@ from scipy.optimize  import curve_fit
 # EI Dynamics module
 from eidynamics.abf_to_data         import abf_to_data
 from eidynamics.expt_to_dataframe   import expt2df
-from eidynamics.ephys_functions     import IRcalc
+from eidynamics.ephys_functions     import IRcalc, RaCalc
 from eidynamics.utils               import delayed_alpha_function,PSP_start_time_1sq
 from eidynamics                     import pattern_index
 from eidynamics.errors              import *
@@ -40,8 +40,9 @@ class Neuron:
         self.properties         = {}
         self.expectedResponse   = {}
         self.spotExpectedDict   = {}
-        self.singleSpotDataParsed     = False
+        self.singleSpotDataParsed= False
         self.spotStimFreq       = 20
+        self.trainingSet        = np.zeros((1,40006))
 
     def addExperiment(self,datafile,coordfile,exptParams):
         """
@@ -54,7 +55,7 @@ class Neuron:
         if exptParams.exptType == '1sq20Hz':
             self.singleSpotDataParsed = True
             self.spotStimFreq         = exptParams.stimFreq
-            _1sqExpectedDict = self.make_spot_profile(newExpt)
+            _1sqExpectedDict          = self.make_spot_profile(newExpt)
             # self.spotExpectedDict.update({exptParams.condition:{exptParams.stimFreq:{exptParams.EorI:_1sqExpectedDict}}})
             self.updateExperiment(_1sqExpectedDict, self.spotExpectedDict, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
 
@@ -62,6 +63,8 @@ class Neuron:
             spotExpectedDict_1sq = self.spotExpectedDict[exptParams.condition]['1sq20Hz'][self.spotStimFreq][exptParams.EorI]
             frameExpectedDict    = self.find_frame_expected(newExpt,spotExpectedDict_1sq)
             self.updateExperiment(frameExpectedDict, self.expectedResponse, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
+
+        self.add_expt_training_set(newExpt)
 
         return self
 
@@ -221,6 +224,34 @@ class Neuron:
         
         return frameExpected
 
+    def add_expt_training_set(self,exptObj):
+        cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
+        pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
+        tracelength    = 20000
+        inputSet       = np.zeros((exptObj.numSweeps,tracelength+6))
+        outputSet      = np.zeros((exptObj.numSweeps,tracelength))
+
+        IR = IRcalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
+        Ra = RaCalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRchargingPeriod, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
+
+        for sweep in range(exptObj.numSweeps):
+            sweepTrace = cellData[sweep,:tracelength]
+            pdTrace    = pdData[sweep,:tracelength]
+            numSquares = len(exptObj.stimCoords[sweep+1])
+            print(IR[sweep], Ra[sweep])
+            tempArray  = np.array([exptObj.stimFreq, numSquares, exptObj.stimIntensity, exptObj.pulseWidth, IR[sweep], Ra[sweep]])
+            inputSet[sweep,:6] = tempArray
+            inputSet[sweep,6:] = pdTrace
+            outputSet[sweep,:] = sweepTrace
+
+        newTrainingSet = np.concatenate((inputSet,outputSet),axis=1)
+        oldTrainingSet = self.trainingSet
+        print(newTrainingSet.shape,oldTrainingSet.shape)
+        self.trainingSet = np.concatenate((newTrainingSet,oldTrainingSet),axis=0)
+
+        return self
+
+
 
 class Experiment:
     '''All different kinds of experiments conducted on a patched
@@ -336,6 +367,16 @@ class Experiment:
             self.Fs                 = ep.Fs
             self.exptType           = ep.exptType
             self.condition          = ep.condition
+
+            self.sweepDuration      = ep.sweepDuration      
+            self.sweepBaselineEpoch = ep.sweepBaselineEpoch 
+            self.opticalStimEpoch   = ep.opticalStimEpoch   
+            self.IRBaselineEpoch    = ep.IRBaselineEpoch    
+            self.IRpulseEpoch       = ep.IRpulseEpoch       
+            self.IRchargingPeriod   = ep.IRchargingPeriod   
+            self.IRsteadystatePeriod= ep.IRsteadystatePeriod
+            self.interSweepInterval = ep.interSweepInterval
+
             self.unit = 'pA' if self.clamp == 'VC' else 'mV' if self.clamp == 'CC' else 'a.u.'
         except Exception as err:
             raise ParameterMismatchError(message=err)
