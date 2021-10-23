@@ -123,28 +123,32 @@ def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
     Input: nxm array where n is number of frames, m is datapoints per sweep
     '''
     if len(response_array_1sq.shape)==1:
-        avgAllSpots     = (baseline(response_array_1sq))[:5600]
+        avgAllSpots     = response_array_1sq - rolling_variance_baseline(response_array_1sq)[0]
+        avgAllSpots     = avgAllSpots[:5600]
+        avgAllSpots     = np.where(avgAllSpots>30,30,avgAllSpots)        
     else:
         avgAllSpots     = np.mean(response_array_1sq[:,:5600],axis=0) #clipping signal for speed
+        
+    w                   = 40 if np.max(avgAllSpots)>=30 else 50
     stimStart           = int(Fs*stimStartTime)
     avgAllSpots         = filter_data(avgAllSpots, filter_type='butter',high_cutoff=300,sampling_freq=Fs)
     movAvgAllSpots      = moving_average(np.append(avgAllSpots,np.zeros(19)),20)
     response            = movAvgAllSpots - avgAllSpots
     stdDevResponse      = np.std(response[:stimStart])
     responseSign        = np.sign(response-stdDevResponse)
-    peaks               = find_peaks(responseSign[stimStart:],distance=100,width=50)
-    
+    peaks               = find_peaks(responseSign[stimStart:],distance=100,width=w)
+
     zeroCrossingPoint   = peaks[1]['left_ips']
     
     PSPStartTime_1sq    = stimStart + zeroCrossingPoint
     PSPStartTime_1sq    = PSPStartTime_1sq/Fs
-
-    try:
-        synDelay        = Fs*(PSPStartTime_1sq[0] - stimStartTime)
-    except IndexError as err:
-        synDelay        = np.NaN
     
-    return synDelay
+    try:
+        synDelay_ms        = 1000*(PSPStartTime_1sq[0] - stimStartTime)
+    except:
+        synDelay_ms        = np.NaN
+    print(synDelay_ms)
+    return synDelay_ms
 
 
 def delayed_alpha_function(t,A,tau,delta):
@@ -154,3 +158,24 @@ def delayed_alpha_function(t,A,tau,delta):
     a   = 1/tau
     y   = A*(a*T)*np.exp(1-a*T)
     return y
+
+def rolling_variance_baseline(vector,window=500,slide=50):
+    t1          = 0
+    leastVar    = 1000
+    leastVarTime= 0
+    lastVar     = 1000
+    mu          = 0
+    count       = int(len(vector)/slide)
+    for i in range(count):
+        t2      = t1+window        
+        sigmaSq = np.var(vector[t1:t2])
+        if sigmaSq<leastVar:
+            leastVar     = sigmaSq
+            leastVarTime = t1
+            mu           = np.mean(vector[t1:t2])
+        t1      = t1+slide
+    
+    baselineAvg      = mu
+    baselineVariance = sigmaSq
+    baselineAvgWindow= np.arange(leastVarTime,leastVarTime+window)
+    return [baselineAvg,baselineVariance,baselineAvgWindow]

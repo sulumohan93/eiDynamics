@@ -85,10 +85,28 @@ def abf_to_data(abf_file,exclude_channels=[],baseline_criterion=0.1,sweep_baseli
     # print(abf.sweepX) # displays sweep times (seconds)
     # print(abf.sweepC) # displays command waveform (DAC)
 
+def _mean_at_least_rolling_variance(vector,window=500,slide=50):
+    t1          = 0
+    leastVar    = 1000
+    leastVarTime= 0
+    lastVar     = 1000
+    mu          = 0
+    count       = int(len(vector)/slide)
+    for i in range(count):
+        t2      = t1+window        
+        sigmaSq = np.var(vector[t1:t2])
+        if sigmaSq<leastVar:
+            leastVar     = sigmaSq
+            leastVarTime = t1
+            mu           = np.mean(vector[t1:t2])
+        t1      = t1+slide
+    return mu,leastVarTime,leastVarTime+window
+
 
 def _baseline_subtractor(sweep,sweep_baseline_epoch,sampling_freq,subtract_baseline):
-    baselineWindow = epoch_to_datapoints(sweep_baseline_epoch,sampling_freq)
-    sweepBaseline = np.mean(sweep[baselineWindow])
+    # baselineWindow = epoch_to_datapoints(sweep_baseline_epoch,sampling_freq)
+    # sweepBaseline  = np.mean(sweep[baselineWindow])
+    sweepBaseline = _mean_at_least_rolling_variance(sweep,window=1000)[0]
     if subtract_baseline:
         sweepNew = sweep - sweepBaseline
         return sweepNew, sweepBaseline

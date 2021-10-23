@@ -44,6 +44,27 @@ class Neuron:
         self.spotStimFreq       = 20
         self.trainingSet        = np.zeros((1,40006))
 
+    def cell_params_parser(self,ep):
+        """
+        Stores the animal related details into Neuron attributes
+        from experiment parameter file
+        """
+        try:
+            self.animal = {"animalID":ep.animalID,          "sex":ep.sex,
+                           "dateofBirth":ep.dateofBirth,    "dateofInjection":ep.dateofInj,
+                           "dateofExpt":ep.dateofExpt}
+            self.virus  = {"site":ep.site,                  "injParams":ep.injectionParams,
+                           "virus":ep.virus,                "virusTitre":ep.virusTitre,
+                           "injVolume":ep.volumeInj,        "ageatInj":ep.ageAtInj,
+                           "ageatExpt":ep.ageAtExp,         "incubation":ep.incubation}
+            self.device = {"objMag":ep.objMag,              "polygonFrameSize":ep.frameSize,
+                           "polygonGridSize":ep.gridSize,   "polygonSquareSize":ep.squareSize,
+                           "DAQ":'Digidata 1440',           "Amplifier":'Multiclamp 700B'}
+        except Exception as err:
+            raise ParameterMismatchError(message=err)
+
+        return self
+
     def addExperiment(self,datafile,coordfile,exptParams):
         """
         A function that takes filenames and creates an experiment object for a cell object
@@ -68,47 +89,6 @@ class Neuron:
 
         return self
 
-    def __iter__(self):
-        return self.experiment.iteritems()
-
-    @staticmethod
-    def loadCell(filename):
-        try:
-            with open(filename,'rb') as fin:
-                return pickle.load(fin)
-        except FileNotFoundError:
-            print("File not found.")
-            raise Exception
-
-    def saveCell(self,filename):
-        directory       = os.path.dirname(filename)
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        with open(filename, 'wb') as fout:
-            print("Neuron object saved into pickle. Use loadCell to load back.")
-            pickle.dump(self, fout, pickle.HIGHEST_PROTOCOL)
-
-    def cell_params_parser(self,ep):
-        """
-        Stores the animal related details into Neuron attributes
-        from experiment parameter file
-        """
-        try:
-            self.animal = {"animalID":ep.animalID,          "sex":ep.sex,
-                           "dateofBirth":ep.dateofBirth,    "dateofInjection":ep.dateofInj,
-                           "dateofExpt":ep.dateofExpt}
-            self.virus  = {"site":ep.site,                  "injParams":ep.injectionParams,
-                           "virus":ep.virus,                "virusTitre":ep.virusTitre,
-                           "injVolume":ep.volumeInj,        "ageatInj":ep.ageAtInj,
-                           "ageatExpt":ep.ageAtExp,         "incubation":ep.incubation}
-            self.device = {"objMag":ep.objMag,              "polygonFrameSize":ep.frameSize,
-                           "polygonGridSize":ep.gridSize,   "polygonSquareSize":ep.squareSize,
-                           "DAQ":'Digidata 1440',           "Amplifier":'Multiclamp 700B'}
-        except Exception as err:
-            raise ParameterMismatchError(message=err)
-
-        return self
-
     def updateExperiment(self,exptObj,exptDict,condition,exptType,stimFreq,EorI):
         """
         Accommodates all the expriment objects into a dictionary
@@ -128,16 +108,6 @@ class Neuron:
 
         exptDict.update(exptDict)
         return exptDict
-
-    @staticmethod
-    def addCell2db(cellFile):
-        cell        = Neuron.loadCell(cellFile)
-        allCellFile = os.path.join(projectPathRoot,allCellsResponseFile)
-        tempDF      = pd.read_excel(allCellFile)
-        outDF       = pd.concat([cell.response,tempDF],axis=1)
-        outDF       = outDF.drop_duplicates()
-        outDF.to_excel(allCellsResponseFile)
-        print("Cell experiment data has been added to {}".format(allCellsResponseFile))
 
     def make_spot_profile(self,exptObj1sq):
         if not exptObj1sq.exptType == '1sq20Hz':
@@ -164,7 +134,7 @@ class Neuron:
         spotExpectedDict        = {}
 
         for i in range(len(spotCoords)):
-            spotPD_trialAvg               = pd[i,int(Fs*avgResponseStartTime):int(Fs*avgSecondResponseStartTime)] # 1 x 1000
+            # spotPD_trialAvg               = pd[i,int(Fs*avgResponseStartTime):int(Fs*avgSecondResponseStartTime)] # 1 x 1000
             spotCell_trialAVG_pulse2pulse = cell[i,firstPulseTime:secondPulseTime+200]
 
             t                   = np.linspace(0,IPI+0.01,len(spotCell_trialAVG_pulse2pulse)) # seconds at Fs sampling
@@ -211,7 +181,6 @@ class Neuron:
             fittedResToPulses = np.zeros(len(cell[0,:]))
             t1 = int(Fs*stimStart)
             for k in range(numPulses):
-                
                 t2 = t1+int(Fs*IPI+avgSynapticDelay)
                 T2 = t1+int(0.4*Fs)
                 window1 = range(t1,t2)
@@ -238,7 +207,6 @@ class Neuron:
             sweepTrace = cellData[sweep,:tracelength]
             pdTrace    = pdData[sweep,:tracelength]
             numSquares = len(exptObj.stimCoords[sweep+1])
-            print(IR[sweep], Ra[sweep])
             tempArray  = np.array([exptObj.stimFreq, numSquares, exptObj.stimIntensity, exptObj.pulseWidth, IR[sweep], Ra[sweep]])
             inputSet[sweep,:6] = tempArray
             inputSet[sweep,6:] = pdTrace
@@ -246,12 +214,53 @@ class Neuron:
 
         newTrainingSet = np.concatenate((inputSet,outputSet),axis=1)
         oldTrainingSet = self.trainingSet
-        print(newTrainingSet.shape,oldTrainingSet.shape)
         self.trainingSet = np.concatenate((newTrainingSet,oldTrainingSet),axis=0)
 
         return self
+    
+    @staticmethod
+    def loadCell(filename):
+        try:
+            with open(filename,'rb') as fin:
+                return pickle.load(fin)
+        except FileNotFoundError:
+            print("File not found.")
+            raise Exception
 
+    def saveCell(self,filename):
+        directory       = os.path.dirname(filename)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        with open(filename, 'wb') as fout:
+            print("Neuron object saved into pickle. Use loadCell to load back.")
+            pickle.dump(self, fout, pickle.HIGHEST_PROTOCOL)
 
+    @staticmethod
+    def addCell2db(cellFile):
+        cell        = Neuron.loadCell(cellFile)
+        allCellFile = os.path.join(projectPathRoot,allCellsResponseFile)
+        try:
+            tempDF  = pd.read_excel(allCellFile)
+        except FileNotFoundError:
+            tempDF  = pd.DataFrame()
+        outDF       = pd.concat([cell.response,tempDF],ignore_index=True)
+        # outDF       = pd.concat([cell.response,tempDF],axis=1)
+        outDF       = outDF.drop_duplicates()
+        outDF.to_excel(allCellFile)#(allCellsResponseFile)
+        print("Cell experiment data has been added to {}".format(allCellsResponseFile))
+
+    @staticmethod
+    def save_training_set(cellFile):
+        directory       = os.path.dirname(cellFile)
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        cell            = Neuron.loadCell(cellFile)
+        celltrainingSet = cell.trainingSet[:,1:]
+        trainingSetFile = os.path.join(directory,"cell_trainingSet.txt")
+        np.savetxt(trainingSetFile, celltrainingSet,delimiter = ",")
+
+    def __iter__(self):
+        return self.experiment.iteritems()
 
 class Experiment:
     '''All different kinds of experiments conducted on a patched

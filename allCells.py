@@ -1,9 +1,9 @@
 # cell directories
 import os
 
-NCBSDataPath = "\\storage.ncbs.res.in\\adityaa\\"
+NCBSDataPath =   "\\storage.ncbs.res.in\\adityaa\\"
 cloudDataPath = "C:\\Users\\adity\\OneDrive\\NCBS\\"
-rigDataPath = "C:\\Users\\aditya\\OneDrive\\NCBS\\"
+rigDataPath =   "C:\\Users\\aditya\\OneDrive\\NCBS\\"
 
 if os.path.exists(NCBSDataPath):
     projectPathRoot = NCBSDataPath
@@ -38,4 +38,4 @@ allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-06-09_G337\\3373\\",
 testCells =            ["Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\5211\\",
                         "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3871\\"]
 
-allCellsResponseFile = "Lab\\Projects\\EI_Dynamics\\AnalysisFiles\\allCells.xslx"
+allCellsResponseFile = "Lab\\Projects\\EI_Dynamics\\AnalysisFiles\\allCells.xlsx"
