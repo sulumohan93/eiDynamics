@@ -10,10 +10,54 @@ import imp
 
 from eidynamics             import ephys_classes
 from eidynamics.errors      import *
-from eidynamics.plotmaker   import make_plots
+from eidynamics.plotmaker   import dataframe_to_plots
 
+def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=False, save_experiment_to_cell=False,save_plots=True):
+    print("Analyzing New Cell from: ",cellDirectory)
+    try:
+        fileExt = "rec.abf"
+        recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
 
-def main(inputFile, saveTrial=False, makePlots=False):
+        for recFile in recFiles:
+            print("Now analysing: ",recFile)
+            cell,cellFile = main(recFile,save_experiment_to_cell=save_experiment_to_cell, show_plots=False)
+            # saving
+            
+        cell.generate_expected_traces()
+
+        if add_cell_to_database:
+            cell.addCell2db()
+
+        if export_training_set:
+            print("Saving traces for training")
+            cell.save_training_set(cellDirectory)
+
+        if save_experiment_to_cell:
+            cellFile            = cellDirectory + "\\" + str(cell.cellID) + ".pkl"
+            cellFile_csv        = cellDirectory + "\\" + str(cell.cellID) + ".xlsx"
+            ephys_classes.Neuron.saveCell(cell, cellFile)
+            cell.response.to_excel(cellFile_csv)
+        else:
+            cell.response.to_excel(cellDirectory + "\\" + str(cell.cellID) + "_temp.xlsx")
+
+        # Plots
+        if save_plots:
+            dataframe_to_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="EI",         clipSpikes=True)
+            dataframe_to_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="PatternID",  clipSpikes=True)
+            dataframe_to_plots(cellFile, ploty="peakRes", gridRow="PatternID",  plotby="Repeat",     clipSpikes=True)
+
+            dataframe_to_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="EI",        clipSpikes=True)
+            dataframe_to_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="PatternID", clipSpikes=True)
+            dataframe_to_plots(cellFile, ploty="peakTime", gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
+
+        return cell,cellFile
+
+    except Exception as err:
+        print("xxxxxxxxxxxx Error in: ",cellDirectory,"xxxxxxxxxxxxxx")
+        print(err)
+        pass
+
+def main(inputFile, save_experiment_to_cell=True, show_plots=False):
     datafile      = os.path.realpath(inputFile)
     exptDir       = os.path.dirname(datafile)
     exptFile      = os.path.basename(datafile)
@@ -71,24 +115,14 @@ def main(inputFile, saveTrial=False, makePlots=False):
 
     cell.addExperiment(datafile=datafile, coordfile=coordfile, exptParams=exptParams)
 
-    # saving
-    if saveTrial:
+    if save_experiment_to_cell:
         ephys_classes.Neuron.saveCell(cell, cellFile)
         cell.response.to_excel(cellFile_csv)
+        # ephys_classes.Neuron.save_training_set(cellFile)
     else:
-        cell.response.to_excel(exptDir + "\\" + exptParams.cellID + "_temp.xlsx")
+        cell.response.to_excel(exptDir + "\\" + str(cell.cellID) + "_temp.xlsx")
 
-    # Plots
-    if makePlots:
-        make_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="EI",         clipSpikes=True)
-        make_plots(cellFile, ploty="peakRes", gridRow="numSquares", plotby="PatternID",  clipSpikes=True)
-        make_plots(cellFile, ploty="peakRes", gridRow="PatternID",  plotby="Repeat",     clipSpikes=True)
-
-        make_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="EI",        clipSpikes=True)
-        make_plots(cellFile, ploty="peakTime", gridRow="numSquares", plotby="PatternID", clipSpikes=True)
-        make_plots(cellFile, ploty="peakTime", gridRow="PatternID",  plotby="Repeat",    clipSpikes=True)
-
-    return cellFile
+    return cell,cellFile
 
 if __name__ == "__main__":
     main(sys.argv[1])

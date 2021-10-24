@@ -12,12 +12,13 @@ def expt2df(expt,neuron,eP):
     numRepeats      = eP.repeats
 
     # create the dataframe that stores analyzed experiment results
-    features        = ["CellID","ExptType","Condition","EI","StimFreq","NumSquares","PulseWidth","PatternID","Intensity","Sweep","Repeat","Unit"]
+    features        = ["CellID","ExptType","Condition","Clamp","EI","StimFreq","NumSquares","PulseWidth","PatternID","Intensity","Sweep","Repeat","Unit"]
     df              = pd.DataFrame(columns=features)
     df.astype({
                 "CellID"    : "string",
                 "ExptType"  : "string",
                 "Condition" : "string",
+                "Clamp"     : "string",
                 "EI"        : "string",
                 "StimFreq"  : 'int8',
                 "NumSquares": "int8",
@@ -44,6 +45,7 @@ def expt2df(expt,neuron,eP):
     df["CellID"]    = str(eP.cellID)
     df["ExptType"]  = str(eP.exptType)
     df["Condition"] = str(eP.condition)
+    df["Clamp"]     = str(eP.clamp)
     df["EI"]        = str(eP.EorI)
     df["StimFreq"]  = eP.stimFreq  # stimulation pulse frequency
     df["PulseWidth"]= eP.pulseWidth

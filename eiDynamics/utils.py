@@ -147,7 +147,7 @@ def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
         synDelay_ms        = 1000*(PSPStartTime_1sq[0] - stimStartTime)
     except:
         synDelay_ms        = np.NaN
-    print(synDelay_ms)
+    
     return synDelay_ms
 
 
