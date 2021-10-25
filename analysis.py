@@ -13,35 +13,38 @@ from eidynamics.errors      import *
 from eidynamics.plotmaker   import dataframe_to_plots
 
 def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=False, save_experiment_to_cell=False,save_plots=True):
-    print("Analyzing New Cell from: ",cellDirectory)
-    # try:
-    fileExt = "rec.abf"
-    recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
+    print(120*"-","\nAnalyzing New Cell from: ",cellDirectory)
+    try:
+        fileExt = "rec.abf"
+        recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
 
-    for recFile in recFiles:
-        print("Now analysing: ",recFile)
-        # try:
-        cell,cellFile = main(recFile,save_experiment_to_cell=save_experiment_to_cell, show_plots=False)
-        # except:
-            # pass
-        # saving
+        for recFile in recFiles:
+            print("Now analysing: ",recFile)
+            # try:
+            cell,cellFile = main(recFile,save_experiment_to_cell=save_experiment_to_cell, show_plots=False)
+            # except:
+                # pass
+            # saving
         
-    cell.generate_expected_traces()
+        cell.generate_expected_traces()
 
-    if add_cell_to_database:
-        cell.addCell2db()
+        if add_cell_to_database:
+            cell.addCell2db()
 
-    if export_training_set:
-        print("Saving traces for training")
-        cell.save_training_set(cellDirectory)
+        if export_training_set:
+            print("Saving traces for training")
+            cell.save_training_set(cellDirectory)
 
-    if save_experiment_to_cell:
-        cellFile            = cellDirectory + "\\" + str(cell.cellID) + ".pkl"
-        cellFile_csv        = cellDirectory + "\\" + str(cell.cellID) + ".xlsx"
-        ephys_classes.Neuron.saveCell(cell, cellFile)
-        cell.response.to_excel(cellFile_csv)
-    else:
-        cell.response.to_excel(cellDirectory + "\\" + str(cell.cellID) + "_temp.xlsx")
+        if save_experiment_to_cell:
+            cellFile            = cellDirectory + "\\" + str(cell.cellID) + ".pkl"
+            cellFile_csv        = cellDirectory + "\\" + str(cell.cellID) + ".xlsx"
+            ephys_classes.Neuron.saveCell(cell, cellFile)
+            cell.response.to_excel(cellFile_csv)
+        else:
+            cell.response.to_excel(cellDirectory + "\\" + str(cell.cellID) + "_temp.xlsx")
+            
+    except UnboundLocalError as err:
+        print("Check if there are '_rec' labeled .abf files in the directory.")
 
     # Plots
     if save_plots:

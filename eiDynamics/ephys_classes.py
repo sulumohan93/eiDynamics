@@ -43,7 +43,7 @@ class Neuron:
         self.spotExpected       = {}
         self.singleSpotDataParsed= False
         self.spotStimFreq       = 20
-        self.trainingSet        = np.zeros((1,40006))
+        self.trainingSet        = np.zeros((1,40026))
 
     def cell_params_parser(self,ep):
         """
@@ -121,7 +121,7 @@ class Neuron:
         cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
         pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
         tracelength    = 20000
-        inputSet       = np.zeros((exptObj.numSweeps,tracelength+6))
+        inputSet       = np.zeros((exptObj.numSweeps,tracelength+26))
         outputSet      = np.zeros((exptObj.numSweeps,tracelength))
 
         IR = IRcalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
@@ -131,9 +131,36 @@ class Neuron:
             sweepTrace = cellData[sweep,:tracelength]
             pdTrace    = pdData[sweep,:tracelength]
             numSquares = len(exptObj.stimCoords[sweep+1])
-            tempArray  = np.array([exptObj.stimFreq, numSquares, exptObj.stimIntensity, exptObj.pulseWidth, IR[sweep], Ra[sweep]])
-            inputSet[sweep,:6] = tempArray
-            inputSet[sweep,6:] = pdTrace
+            sqSet = exptObj.stimCoords[sweep+1]
+            patternID = pattern_index.get_patternID(sqSet)
+
+            coordArrayTemp = np.zeros((15))            
+            coordArrayTemp[:numSquares] = exptObj.stimCoords[sweep+1]
+
+            if exptObj.clamp == 'VC' and exptObj.EorI == 'E':
+                clampPotential = -70
+            elif exptObj.clamp == 'VC' and exptObj.EorI == 'I':
+                clampPotential = 0
+            elif exptObj.clamp == 'CC':
+                clampPotential = -70
+
+            gabazineInBath = 1 if (exptObj.condition == 'Gabazine') else 0
+            EorI = -1 if (exptObj.EorI == 'I') else 1
+
+            tempArray  = np.array([exptObj.stimFreq,
+                                   numSquares,
+                                   exptObj.stimIntensity,
+                                   exptObj.pulseWidth,
+                                   exptObj.meanBaseline,
+                                   clampPotential,
+                                   EorI,
+                                   gabazineInBath,
+                                   IR[sweep],
+                                   Ra[sweep],
+                                   patternID])
+            tempArray2 = np.concatenate((tempArray,coordArrayTemp))
+            inputSet[sweep,:len(tempArray2)] = tempArray2
+            inputSet[sweep,len(tempArray2):] = pdTrace
             outputSet[sweep,:] = sweepTrace
 
         newTrainingSet = np.concatenate((inputSet,outputSet),axis=1)
@@ -150,10 +177,10 @@ class Neuron:
                 self.spotExpected.update(_1sqExpectedDict)
         for exptID,expt in self.experiments.items():
             if 'FreqSweep' in expt or 'LTMRand' in expt:
-                c,ei = expt[1:3]
+                c,ei,f = expt[1:4]
                 FreqExptObj = expt[-1]
                 for k,v in self.spotExpected.items():
-                    if [c,ei] == v[:2]:
+                    if [c,ei,f] == v[:3]:
                         spotExpectedDict1sq = v[-1]                
                         frameExpectedDict    = self.find_frame_expected(FreqExptObj,spotExpectedDict1sq)
                         self.expectedResponse[exptID] = frameExpectedDict
@@ -224,6 +251,7 @@ class Neuron:
             numSq      = len(coordsTemp)
             firstPulseExpected = np.zeros((int(Fs*(IPI+0.01))))
             firstPulseFitted   = np.zeros((int(Fs*(0.4))))# added 0.01 second = 10 ms to IPI, check line 41,43,68,69
+            
             for spot in coordsTemp:            
                 spotExpected        = spotExpectedDict_1sq[spot][4]
                 spotFitted          = spotExpectedDict_1sq['1sqAvg'][5]
@@ -233,7 +261,7 @@ class Neuron:
             expectedResToPulses = np.zeros(len(cell[0,:]))
             fittedResToPulses = np.zeros(len(cell[0,:]))
             t1 = int(Fs*stimStart)
-            print(t1,IPI,avgSynapticDelay)
+
             for k in range(numPulses):
                 t2 = t1+int(Fs*IPI+avgSynapticDelay)
                 T2 = t1+int(0.4*Fs)
@@ -261,7 +289,7 @@ class Neuron:
 
     def save_training_set(self,directory):
         celltrainingSet = self.trainingSet[:-1,:]
-        trainingSetFile = os.path.join(directory,"cell_trainingSet.txt")
+        trainingSetFile = os.path.join(directory,"cell_trainingSet.h5")
         with h5py.File(trainingSetFile, 'w') as f:
             dset = f.create_dataset("default", data = celltrainingSet)
 
