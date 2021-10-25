@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import pickle
 import os
+import h5py
 from scipy.optimize  import curve_fit
 
 # EI Dynamics module
@@ -167,6 +168,7 @@ class Neuron:
         condition               = exptObj1sq.condition
         EorI                    = exptObj1sq.EorI
         stimFreq                = exptObj1sq.stimFreq
+        clamp                   = exptObj1sq.clamp
 
         # Get trial averaged stim and response traces for every spot
         pd                      = exptObj1sq.extract_trial_averaged_data(channels=[2])[2] # 45 x 40000
@@ -178,7 +180,7 @@ class Neuron:
         secondPulseTime         = int(Fs*(exptObj1sq.stimStart + IPI)) # 5628 sample points
 
         # Get the synaptic delay from the average responses of all the spots
-        avgResponseStartTime    = PSP_start_time_1sq(cell,stimStartTime=exptObj1sq.stimStart,Fs=Fs)   # 0.2365 seconds
+        avgResponseStartTime    = PSP_start_time_1sq(cell,clamp,EorI,stimStartTime=exptObj1sq.stimStart,Fs=Fs)   # 0.2365 seconds
         avgSecondResponseStartTime = avgResponseStartTime + IPI # 0.2865 seconds
         avgSynapticDelay        = avgResponseStartTime-exptObj1sq.stimStart # ~0.0055 seconds
 
@@ -212,8 +214,8 @@ class Neuron:
         numRepeats      = exptObj.numRepeats
         cell            = exptObj.extract_trial_averaged_data(channels=[0])[0][:,:20000] # 8 x 40000
         stimCoords      = dict([(k, exptObj.stimCoords[k]) for k in range(1,1+int(numSweeps/numRepeats))]) # {8 key dict}
-        stimStart       = 0.2314
-        Fs              = 2e4
+        stimStart       = exptObj.stimStart
+        Fs              = exptObj.Fs
     
         frameExpected   = {}
         for i in range(len(stimCoords)):
@@ -231,6 +233,7 @@ class Neuron:
             expectedResToPulses = np.zeros(len(cell[0,:]))
             fittedResToPulses = np.zeros(len(cell[0,:]))
             t1 = int(Fs*stimStart)
+            print(t1,IPI,avgSynapticDelay)
             for k in range(numPulses):
                 t2 = t1+int(Fs*IPI+avgSynapticDelay)
                 T2 = t1+int(0.4*Fs)
@@ -257,9 +260,10 @@ class Neuron:
         print("Cell experiment data has been added to {}".format(allCellsResponseFile))
 
     def save_training_set(self,directory):
-        celltrainingSet = self.trainingSet
+        celltrainingSet = self.trainingSet[:-1,:]
         trainingSetFile = os.path.join(directory,"cell_trainingSet.txt")
-        np.savetxt(trainingSetFile, celltrainingSet,delimiter = ",")
+        with h5py.File(trainingSetFile, 'w') as f:
+            dset = f.create_dataset("default", data = celltrainingSet)
 
     @staticmethod
     def saveCell(neuronObj,filename):

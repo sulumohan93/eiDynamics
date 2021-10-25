@@ -12,9 +12,9 @@ elif os.path.exists(cloudDataPath):
 elif os.path.exists(rigDataPath):
     projectPathRoot = rigDataPath
 
-allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-04-01_G251\\2511\\",
+allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-08-11_G379\\3791\\"]
+'''            ["Lab\\Projects\\EI_Dynamics\\Data\\21-04-01_G251\\2511\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-06_G234\\2342\\",
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3881\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3882\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3871\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-07-30_G387\\3872\\",
@@ -41,8 +41,11 @@ allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-04-01_G251\\2511\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5211\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5212\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\"]
-
+'''
 testCells =            ["Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\5211\\",
                         "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3871\\"]
+
+# convergence expt, not yet explored
+otherCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3881\\"]
 
 allCellsResponseFile = "Lab\\Projects\\EI_Dynamics\\AnalysisFiles\\allCells.xlsx"

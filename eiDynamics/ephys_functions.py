@@ -20,7 +20,7 @@ def RaCalc(recordingData, clamp, IRBaselineEpoch, IRchargingPeriod, IRsteadystat
         chargeTime  = time[e2dp(IRchargingPeriod,Fs)] - IRchargingPeriod[0]
         chargeRes   = resSig[e2dp(IRchargingPeriod,Fs)]
 
-        popt,_      = curve_fit(charging_membrane,chargeTime,chargeRes)
+        popt,_      = curve_fit(charging_membrane,chargeTime,chargeRes,bounds=([-10,0],[10,100]),p0=([0.5,0.05]))
 
         RaTrend.append(popt[1])
 
@@ -91,11 +91,12 @@ def pulseResponseCalc(recordingData,eP):
         res             = np.array(res)
         
         peakTimes       = []
-        df_peaks.loc[sweepID + 1, "firstPulseDelay"] = PSP_start_time_1sq(ch0_cell,stimStartTime=eP.opticalStimEpoch[0],Fs=Fs)
+        df_peaks.loc[sweepID + 1, "firstPulseDelay"] = PSP_start_time_1sq(ch0_cell,eP.clamp,eP.EorI,stimStartTime=eP.opticalStimEpoch[0],Fs=Fs)
 
         if eP.EorI == 'I' or eP.clamp == 'CC':
             maxRes = np.max(res, axis=1)
             PeakResponses.append(np.max(maxRes))
+            
             df_peaks.loc[sweepID + 1, [1,2,3,4,5,6,7,8]] = maxRes
             for resSlice in res:
                 maxVal = np.max(resSlice)

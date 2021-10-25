@@ -1,7 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from numpy.ma import flatnotmasked_contiguous
+
 from scipy.signal import filter_design
 from scipy.signal import butter, bessel, decimate, sosfiltfilt
 from scipy.signal import find_peaks, peak_widths
@@ -118,7 +118,7 @@ def alpha_synapse(x,Vmax,tau):
     return y
 
 
-def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
+def PSP_start_time_1sq(response_array_1sq,clamp,EorI,stimStartTime=0.231,Fs=2e4):
     '''
     Input: nxm array where n is number of frames, m is datapoints per sweep
     '''
@@ -128,8 +128,9 @@ def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
         avgAllSpots     = np.where(avgAllSpots>30,30,avgAllSpots)        
     else:
         avgAllSpots     = np.mean(response_array_1sq[:,:5600],axis=0) #clipping signal for speed
-        
-    w                   = 40 if np.max(avgAllSpots)>=30 else 50
+    if clamp == 'VC' and EorI == 'E':
+        avgAllSpots     = -1*avgAllSpots
+    w                   = 40 if np.max(avgAllSpots)>=30 else 60
     stimStart           = int(Fs*stimStartTime)
     avgAllSpots         = filter_data(avgAllSpots, filter_type='butter',high_cutoff=300,sampling_freq=Fs)
     movAvgAllSpots      = moving_average(np.append(avgAllSpots,np.zeros(19)),20)
@@ -139,7 +140,7 @@ def PSP_start_time_1sq(response_array_1sq,stimStartTime=0.231,Fs=2e4):
     peaks               = find_peaks(responseSign[stimStart:],distance=100,width=w)
 
     zeroCrossingPoint   = peaks[1]['left_ips']
-    
+
     PSPStartTime_1sq    = stimStart + zeroCrossingPoint
     PSPStartTime_1sq    = PSPStartTime_1sq/Fs
     

@@ -40,7 +40,7 @@ if __name__ == "__main__":
         for cellDirectory in allCells:
             savedCellFile = batch_analysis((projectPathRoot+cellDirectory),add_cell_to_database=True, export_training_set=True, save_experiment_to_cell=True,save_plots=True)
             print("Data saved in cell file: ",savedCellFile)
-            batch_plot(savedCellFile)
+            # batch_plot(savedCellFile)
     elif "codetest" in sys.argv:
         print("Checking if analysis pipline is working...")
         for cellDirectory in testCells:
