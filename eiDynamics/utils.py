@@ -180,3 +180,9 @@ def rolling_variance_baseline(vector,window=500,slide=50):
     baselineVariance = sigmaSq
     baselineAvgWindow= np.arange(leastVarTime,leastVarTime+window)
     return [baselineAvg,baselineVariance,baselineAvgWindow]
+
+def get_pulse_times(numPulses,firstPulseStartTime,stimFreq):
+    IPI = 1/stimFreq
+    lastPulseTime = firstPulseStartTime+(numPulses-1)*IPI
+    pulseTimes = np.linspace(firstPulseStartTime, lastPulseTime, num=numPulses, endpoint=True)
+    return pulseTimes

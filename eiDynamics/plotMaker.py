@@ -20,6 +20,7 @@ def dataframe_to_plots(cellpickleFile,ploty="PeakRes",gridRow="NumSquares",gridC
 
     # tag: improve feature (to permanently remove hard coding the indices of calculated values,
     # use of tiers in pandas dataframe needs to be implemented)
+    
     if ploty == "PeakRes":
         vals = np.arange(1,9)
         valName = "PSR Value (" + unit + ")"
@@ -29,6 +30,9 @@ def dataframe_to_plots(cellpickleFile,ploty="PeakRes",gridRow="NumSquares",gridC
     elif ploty == "PeakTime":
         vals = np.arange(9,17)
         valName = "Time of Peak (ms)"
+    elif ploty == "AUC":
+        vals = np.arange(17,25)
+        valName = "AuC of Responses (a.u.)"
     else:
         print("Don't know what to plot. Plotting peak responses.")
         vals = np.arange(1,9)

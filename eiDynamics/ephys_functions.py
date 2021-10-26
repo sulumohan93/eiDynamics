@@ -68,6 +68,7 @@ def IRcalc(recordingData,clamp,IRBaselineEpoch,IRsteadystatePeriod,Fs=2e4):
 def pulseResponseCalc(recordingData,eP):
     pulsePeriods    = []
     PeakResponses   = []
+    AUCResponses    = []
     df_peaks        = pd.DataFrame()
 
     APflag          = bool(0)
@@ -95,30 +96,41 @@ def pulseResponseCalc(recordingData,eP):
 
         if eP.EorI == 'I' or eP.clamp == 'CC':
             maxRes = np.max(res, axis=1)
+            aucRes = np.trapz(res,axis=1)
             PeakResponses.append(np.max(maxRes))
             
             df_peaks.loc[sweepID + 1, [1,2,3,4,5,6,7,8]] = maxRes
+            
             for resSlice in res:
                 maxVal = np.max(resSlice)
                 pr = np.where(resSlice == maxVal)[0]  # signal.find_peaks(resSlice,height=maxVal)
                 peakTimes.append(pr[0] / 20)
             df_peaks.loc[sweepID + 1, [9,10,11,12,13,14,15,16]] = peakTimes[:]
+            
             df_peaks.loc[sweepID + 1, "AP"] = bool(False)
             if eP.clamp == 'CC':
                 df_peaks.loc[sweepID + 1, "AP"] = bool(np.max(maxRes) > 80) # 80 mV take as a threshold above baseline to count a response as a spike
                 APflag = bool(df_peaks.loc[sweepID + 1, "AP"] == True)
+            
+            df_peaks.loc[sweepID + 1, [17,18,19,20,21,22,23,24]] = aucRes
 
         elif eP.EorI == 'E' and eP.clamp == 'VC':
             minRes = np.min(res, axis=1)
+            aucRes = np.trapz(res,axis=1)
             PeakResponses.append(np.min(minRes))
+
             df_peaks.loc[sweepID + 1, [1,2,3,4,5,6,7,8]] = minRes
+            
             for resSlice in res:
                 minVal = np.min(resSlice)
                 pr = np.where(resSlice == minVal)[0]  # pr,_ = signal.find_peaks(-1*resSlice,height=np.max(-1*resSlice))
                 peakTimes.append(pr[0] / 20)
+            
             df_peaks.loc[sweepID + 1, [9,10,11,12,13,14,15,16]] = peakTimes[:]
             df_peaks.loc[sweepID + 1, "AP"] = bool(np.max(-1 * minRes) > 80)
             APflag = bool(df_peaks.loc[sweepID + 1, "AP"] == True)
+
+            df_peaks.loc[sweepID + 1, [17,18,19,20,21,22,23,24]] = aucRes
 
     df_peaks.astype({"AP":'bool'})    
     df_peaks["PeakResponse"]                     = PeakResponses

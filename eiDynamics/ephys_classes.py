@@ -10,7 +10,7 @@ from scipy.optimize  import curve_fit
 from eidynamics.abf_to_data         import abf_to_data
 from eidynamics.expt_to_dataframe   import expt2df
 from eidynamics.ephys_functions     import IRcalc, RaCalc
-from eidynamics.utils               import delayed_alpha_function,PSP_start_time_1sq
+from eidynamics.utils               import delayed_alpha_function,PSP_start_time_1sq, get_pulse_times
 from eidynamics                     import pattern_index
 from eidynamics.errors              import *
 from allcells                       import *
@@ -120,9 +120,12 @@ class Neuron:
     def add_expt_training_set(self,exptObj):
         cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
         pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
+        
         tracelength    = 20000
         inputSet       = np.zeros((exptObj.numSweeps,tracelength+26))
         outputSet      = np.zeros((exptObj.numSweeps,tracelength))
+        pulseStartTimes= get_pulse_times(exptObj.numPulses,exptObj.stimStart,exptObj.stimFreq)
+        Fs = exptObj.Fs
 
         IR = IRcalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
         Ra = RaCalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRchargingPeriod, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
@@ -130,6 +133,10 @@ class Neuron:
         for sweep in range(exptObj.numSweeps):
             sweepTrace = cellData[sweep,:tracelength]
             pdTrace    = pdData[sweep,:tracelength]
+            pdTrace = np.zeros(len(pdTrace))
+            pstimes = (Fs*pulseStartTimes).astype(int)
+            
+            pdTrace[pstimes] = 1.0
             numSquares = len(exptObj.stimCoords[sweep+1])
             sqSet = exptObj.stimCoords[sweep+1]
             patternID = pattern_index.get_patternID(sqSet)
@@ -289,7 +296,8 @@ class Neuron:
 
     def save_training_set(self,directory):
         celltrainingSet = self.trainingSet[:-1,:]
-        trainingSetFile = os.path.join(directory,"cell_trainingSet.h5")
+        filename = "cell"+str(self.cellID)+"_trainingSet.h5"
+        trainingSetFile = os.path.join(directory,filename)
         with h5py.File(trainingSetFile, 'w') as f:
             dset = f.create_dataset("default", data = celltrainingSet)
 
