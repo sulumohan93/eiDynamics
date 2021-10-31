@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.optimize  import curve_fit
-from eidynamics.utils import PSP_start_time_1sq
+from eidynamics.utils import PSP_start_time
 from eidynamics import ephys_classes
 from eidynamics import pattern_index
 import pickle
@@ -33,7 +33,7 @@ def make_spot_profile(exptObj1sq):
     firstPulseTime          = int(Fs*(exptObj1sq.stimStart)) # 4628 sample points
     secondPulseTime         = int(Fs*(exptObj1sq.stimStart + IPI)) # 5628 sample points
 
-    avgResponseStartTime    = PSP_start_time_1sq(cell)   # 0.2365 seconds
+    avgResponseStartTime,_  = PSP_start_time(cell)   # 0.2365 seconds
     avgSecondResponseStartTime = avgResponseStartTime + IPI # 0.2865 seconds
     avgSynapticDelay        = avgResponseStartTime[0]-exptObj1sq.stimStart # ~0.0055 seconds
 

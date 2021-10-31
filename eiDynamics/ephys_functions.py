@@ -5,7 +5,7 @@ from scipy.optimize import curve_fit
 
 from eidynamics.utils import epoch_to_datapoints as e2dp
 from eidynamics.utils import charging_membrane
-from eidynamics.utils import PSP_start_time_1sq
+from eidynamics.utils import PSP_start_time
 
 def RaCalc(recordingData, clamp, IRBaselineEpoch, IRchargingPeriod, IRsteadystatePeriod, Fs=2e4):
     ''' recordingData is the data dictionary with sweeps numbers as keys.
@@ -92,7 +92,7 @@ def pulseResponseCalc(recordingData,eP):
         res             = np.array(res)
         
         peakTimes       = []
-        df_peaks.loc[sweepID + 1, "firstPulseDelay"] = PSP_start_time_1sq(ch0_cell,eP.clamp,eP.EorI,stimStartTime=eP.opticalStimEpoch[0],Fs=Fs)
+        df_peaks.loc[sweepID + 1, "firstPulseDelay"],_ = PSP_start_time(ch0_cell,eP.clamp,eP.EorI,stimStartTime=eP.opticalStimEpoch[0],Fs=Fs)
 
         if eP.EorI == 'I' or eP.clamp == 'CC':
             maxRes = np.max(res, axis=1)

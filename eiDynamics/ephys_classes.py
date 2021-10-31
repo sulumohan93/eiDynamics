@@ -10,7 +10,7 @@ from scipy.optimize  import curve_fit
 from eidynamics.abf_to_data         import abf_to_data
 from eidynamics.expt_to_dataframe   import expt2df
 from eidynamics.ephys_functions     import IRcalc, RaCalc
-from eidynamics.utils               import delayed_alpha_function,PSP_start_time_1sq, get_pulse_times
+from eidynamics.utils               import delayed_alpha_function,PSP_start_time, get_pulse_times
 from eidynamics                     import pattern_index
 from eidynamics.errors              import *
 from allcells                       import *
@@ -152,7 +152,7 @@ class Neuron:
                 clampPotential = -70
 
             gabazineInBath = 1 if (exptObj.condition == 'Gabazine') else 0
-            EorI = -1 if (exptObj.EorI == 'I') else 1
+            clamp = 0 if (exptObj.clamp == 'CC') else 1
 
             tempArray  = np.array([exptObj.stimFreq,
                                    numSquares,
@@ -160,7 +160,7 @@ class Neuron:
                                    exptObj.pulseWidth,
                                    exptObj.meanBaseline,
                                    clampPotential,
-                                   EorI,
+                                   clamp,
                                    gabazineInBath,
                                    IR[sweep],
                                    Ra[sweep],
@@ -214,7 +214,7 @@ class Neuron:
         secondPulseTime         = int(Fs*(exptObj1sq.stimStart + IPI)) # 5628 sample points
 
         # Get the synaptic delay from the average responses of all the spots
-        avgResponseStartTime    = PSP_start_time_1sq(cell,clamp,EorI,stimStartTime=exptObj1sq.stimStart,Fs=Fs)   # 0.2365 seconds
+        avgResponseStartTime,_    = PSP_start_time(cell,clamp,EorI,stimStartTime=exptObj1sq.stimStart,Fs=Fs)   # 0.2365 seconds
         avgSecondResponseStartTime = avgResponseStartTime + IPI # 0.2865 seconds
         avgSynapticDelay        = avgResponseStartTime-exptObj1sq.stimStart # ~0.0055 seconds
 
