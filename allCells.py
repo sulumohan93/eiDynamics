@@ -35,7 +35,7 @@ allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-04_G233\\2331\\"]
 
 testCells = ["Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\5211\\",
-             "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3871\\"]
+             "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3882\\"]
 
 # convergence expt, not yet explored
 otherCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3881\\"]

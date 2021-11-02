@@ -123,7 +123,7 @@ def PSP_start_time(response_array_1sq,clamp,EorI,stimStartTime=0.231,Fs=2e4):
     Input: nxm array where n is number of frames, m is datapoints per sweep
     '''
     if len(response_array_1sq.shape)==1:
-        avgAllSpots     = response_array_1sq - mean_at_least_rolling_variance(response_array_1sq)
+        avgAllSpots     = response_array_1sq - mean_at_least_rolling_variance(response_array_1sq,window=500,slide=50)
         avgAllSpots     = avgAllSpots[:5600]
         avgAllSpots     = np.where(avgAllSpots>30,30,avgAllSpots)        
     else:
@@ -142,14 +142,17 @@ def PSP_start_time(response_array_1sq,clamp,EorI,stimStartTime=0.231,Fs=2e4):
     zeroCrossingPoint   = peaks[1]['left_ips']
 
     PSPStartTime    = stimStart + zeroCrossingPoint
-    valueAtPSPstart = avgAllSpots[int(PSPStartTime[0])]
+    
     PSPStartTime    = PSPStartTime/Fs
     
     
     try:
         synDelay_ms        = 1000*(PSPStartTime[0] - stimStartTime)
+        valueAtPSPstart    = avgAllSpots[int(PSPStartTime[0])]
     except:
-        synDelay_ms        = np.NaN
+        synDelay_ms        = 0
+        valueAtPSPstart    = avgAllSpots[stimStart]
+
     
     return synDelay_ms,valueAtPSPstart
 

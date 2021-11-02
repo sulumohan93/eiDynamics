@@ -44,6 +44,7 @@ class Neuron:
         self.singleSpotDataParsed= False
         self.spotStimFreq       = 20
         self.trainingSet        = np.zeros((1,40026))
+        self.trainingSetLong    = np.zeros((1,60027))
 
     def cell_params_parser(self,ep):
         """
@@ -75,7 +76,7 @@ class Neuron:
         newExpt         = Experiment(exptParams,datafile,coordfile)
         newExpt.analyze_experiment(self,exptParams)
         self.updateExperiment(newExpt,self.experiments,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
-        self.add_expt_training_set(newExpt)
+        # self.add_expt_training_set(newExpt)
 
         # if exptParams.exptType == '1sq20Hz':
         #     self.singleSpotDataParsed = True
@@ -183,15 +184,95 @@ class Neuron:
                 _1sqExpectedDict = {exptID:[expt[1], expt[2], expt[3], _1sqSpotProfile]}
                 self.spotExpected.update(_1sqExpectedDict)
         for exptID,expt in self.experiments.items():
-            if 'FreqSweep' in expt or 'LTMRand' in expt:
+            if 'FreqSweep' in expt or 'LTMRand' in expt or '1sq20Hz' in expt:
                 c,ei,f = expt[1:4]
                 FreqExptObj = expt[-1]
                 for k,v in self.spotExpected.items():
-                    if [c,ei,f] == v[:3]:
+                    if [c,ei] == v[:2]:
                         spotExpectedDict1sq = v[-1]                
                         frameExpectedDict    = self.find_frame_expected(FreqExptObj,spotExpectedDict1sq)
                         self.expectedResponse[exptID] = frameExpectedDict
-    
+        
+        # if len(self.spotExpected)>0:
+        for exptID,expt in self.experiments.items():
+            exptObj = expt[-1]
+            self.add_expt_training_set_long(exptObj)
+
+            
+    def add_expt_training_set_long(self,exptObj):
+        exptID         = exptObj.dataFile[:15]
+        cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
+        pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
+        
+        tracelength    = 20000
+        inputSet       = np.zeros((exptObj.numSweeps,tracelength+27))
+        outputSet1     = np.zeros((exptObj.numSweeps,tracelength))
+        outputSet2     = np.zeros((exptObj.numSweeps,tracelength))
+        pulseStartTimes= get_pulse_times(exptObj.numPulses,exptObj.stimStart,exptObj.stimFreq)
+        Fs = exptObj.Fs
+
+        IR = IRcalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
+        Ra = RaCalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRchargingPeriod, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
+
+        for sweep in range(exptObj.numSweeps):
+            sweepTrace = cellData[sweep,:tracelength]
+            pdTrace    = pdData[sweep,:tracelength]
+            pdTrace    = np.zeros(len(pdTrace))
+            
+
+
+            pstimes = (Fs*pulseStartTimes).astype(int)
+            stimEnd = pstimes[-1]+int(Fs*exptObj.IPI)
+            pdTrace[pstimes] = 1.0
+            numSquares = len(exptObj.stimCoords[sweep+1])
+            sqSet = exptObj.stimCoords[sweep+1]
+            patternID = pattern_index.get_patternID(sqSet)
+
+            try:
+                fitTrace   = self.expectedResponse[exptID][patternID][5]
+            except:
+                fitTrace = np.zeros(len(pdTrace))
+
+            coordArrayTemp = np.zeros((15))            
+            coordArrayTemp[:numSquares] = exptObj.stimCoords[sweep+1]
+
+            if exptObj.clamp == 'VC' and exptObj.EorI == 'E':
+                clampPotential = -70
+            elif exptObj.clamp == 'VC' and exptObj.EorI == 'I':
+                clampPotential = 0
+            elif exptObj.clamp == 'CC':
+                clampPotential = -70
+
+            gabazineInBath = 1 if (exptObj.condition == 'Gabazine') else 0
+            clamp = 0 if (exptObj.clamp == 'CC') else 1
+            ap    = 0
+            if exptObj.clamp == 'CC' and np.max(sweepTrace[4460:stimEnd])>30:
+                ap = 1
+
+            tempArray  = np.array([exptObj.stimFreq,
+                                   numSquares,
+                                   exptObj.stimIntensity,
+                                   exptObj.pulseWidth,
+                                   exptObj.meanBaseline,
+                                   clampPotential,
+                                   clamp,
+                                   gabazineInBath,
+                                   ap,
+                                   IR[sweep],
+                                   Ra[sweep],
+                                   patternID])
+            tempArray2 = np.concatenate((tempArray,coordArrayTemp))
+            inputSet[sweep,:len(tempArray2)] = tempArray2
+            inputSet[sweep,len(tempArray2):] = pdTrace
+            outputSet1[sweep,:] = sweepTrace
+            outputSet2[sweep,:] = fitTrace
+
+        newTrainingSet = np.concatenate((inputSet,outputSet1,outputSet2),axis=1)
+        oldTrainingSet = self.trainingSetLong
+        self.trainingSetLong = np.concatenate((newTrainingSet,oldTrainingSet),axis=0)
+
+        return self
+
     def make_spot_profile(self,exptObj1sq):
         if not exptObj1sq.exptType == '1sq20Hz':
             raise ParameterMismatchError(message='Experiment object has to be a 1sq experiment')
@@ -265,8 +346,8 @@ class Neuron:
                 firstPulseExpected  += spotExpected[:len(firstPulseExpected)]
                 firstPulseFitted    += spotFitted[:len(firstPulseFitted)]
             avgSynapticDelay    = spotExpectedDict_1sq[spot][0]
-            expectedResToPulses = np.zeros(len(cell[0,:]))
-            fittedResToPulses = np.zeros(len(cell[0,:]))
+            expectedResToPulses = np.zeros(10000+len(cell[0,:]))
+            fittedResToPulses   = np.zeros(10000 + len(cell[0,:]) )
             t1 = int(Fs*stimStart)
 
             for k in range(numPulses):
@@ -275,9 +356,11 @@ class Neuron:
                 window1 = range(t1,t2)
                 window2 = range(t1,T2)
                 expectedResToPulses[window1] += firstPulseExpected[:len(window1)]
+                
                 fittedResToPulses[window2]   += firstPulseFitted[:len(window2)]
                 t1 = t1+int(Fs*IPI)
-
+            fittedResToPulses   =   fittedResToPulses[:len(cell[0,:])]
+            expectedResToPulses = expectedResToPulses[:len(cell[0,:])]
             frameExpected[frameID] = [numSq, stimFreq, exptObj.stimIntensity, exptObj.pulseWidth, expectedResToPulses, fittedResToPulses, firstPulseFitted, firstPulseExpected]
         
         return frameExpected
@@ -300,6 +383,12 @@ class Neuron:
         trainingSetFile = os.path.join(directory,filename)
         with h5py.File(trainingSetFile, 'w') as f:
             dset = f.create_dataset("default", data = celltrainingSet)
+
+        celltrainingSetLong = self.trainingSetLong
+        filename = "cell"+str(self.cellID)+"_trainingSet_longest.h5"
+        trainingSetFile = os.path.join(directory,filename)
+        with h5py.File(trainingSetFile, 'w') as f:
+            dset = f.create_dataset("default", data = celltrainingSetLong)
 
     @staticmethod
     def saveCell(neuronObj,filename):
