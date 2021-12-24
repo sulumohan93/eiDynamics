@@ -10,30 +10,38 @@ import eidynamics.utils as utils
 import sys
 
 
-allCellDataFile = "C:\\Users\\aditya\\OneDrive\\NCBS\\Lab\\Projects\\EI_Dynamics\\training_data\\allCells_trainingSet_short.h5"
+allCellDataFile = "C:\\Users\\aditya\\OneDrive\\NCBS\\Lab\\Projects\\EI_Dynamics\\trainingSet_Long\\allCells_trainingSet_short.h5"
 allCellExcelFile = "C:\\Users\\aditya\\OneDrive\\NCBS\\Lab\\Projects\\EI_Dynamics\\AnalysisFile\\allCells.xlsx"
-ephysStart = 27
-ephysEnd   = 20027
+ephysStart = 28
+ephysEnd   = 20028
+fitStart   = 20028
+fitEnd     = 40028
 
 def main(fignum):
     fignum = int(fignum)
+
     if fignum ==1:
         print("making figure: ",fignum)    
         with h5py.File( allCellDataFile, "r") as f:
             print("Keys:", f.keys())
             print("data:", f['default'] )
             df = pd.DataFrame( f['default'] )
-            df.rename( columns = {0:"StimFreq", 1:"numSq", 2: "intensity", 3: "pulseWidth", 4: "MeanBaseline", 5: "ClampingPotl", 6:"Clamp", 7: "GABAzineFlag", 8:"InputRes", 9:"Ra", 10:"patternID",27:"AP"}, inplace = True )
+            df.rename( columns = {0:"StimFreq", 1:"numSq", 2: "intensity", 3: "pulseWidth", 4: "MeanBaseline", 5: "ClampingPotl", 6:"Clamp", 7: "GABAzineFlag", 8:"AP",9:"InputRes", 10:"Ra", 11:"patternID"}, inplace = True )
+            
             # figure1(df)
             # plt.show()
-            ahp_figure(df)
+            
+            # ahp_figure(df)
+            # plt.show()
+
+            fit_vs_observed_trace_comparison(df)
             plt.show()
     elif fignum == 2: # VC recordings are useless
         with h5py.File( allCellDataFile, "r") as f:
             print("Keys:", f.keys())
             print("data:", f['default'] )
             df = pd.DataFrame( f['default'] )
-            df.rename( columns = {0:"StimFreq", 1:"numSq", 2: "intensity", 3: "pulseWidth", 4: "MeanBaseline", 5: "ClampingPotl", 6:"Clamp", 7: "GABAzineFlag", 8:"InputRes", 9:"Ra", 10:"patternID",27:"AP"}, inplace = True )
+            df.rename( columns = {0:"StimFreq", 1:"numSq", 2: "intensity", 3: "pulseWidth", 4: "MeanBaseline", 5: "ClampingPotl", 6:"Clamp", 7: "GABAzineFlag", 8:"AP",9:"InputRes", 10:"Ra", 11:"patternID"}, inplace = True )
             figure2(df)
             plt.show()
     elif fignum ==3: # VC recordings are useless
@@ -238,7 +246,36 @@ def ahp_figure(df):
     # ax.set_xticks([20,30,40,50])
     # ax.legend(loc="lower left",title="Number of Spots")
     
+def fit_vs_observed_trace_comparison(df):
+    df = df.loc[ (df["Clamp"]==0) & (df["numSq"]!=1) & (df["patternID"]<56) & (df["intensity"]==100) & (df["GABAzineFlag"] == 0 ) & (df["pulseWidth"]==2) & (df["AP"]==0) ]
+    df["numSq"]        = df["numSq"].astype(int)
+    df["StimFreq"]     = df["StimFreq"].astype(int)
 
+    freqs = np.unique(df["StimFreq"])
+    spots = np.unique(df["numSq"])
+
+    fig,ax = plt.subplots(2,4,sharex=True,sharey=True)
+    for i,sq in enumerate(spots):
+        for j,freq in enumerate(freqs):
+            # subplotWin = (4*(i)+j+1)
+            # print(i,j,sq,freq,subplotWin)
+            # ax = plt.subplot(2,4,subplotWin)
+            p0 = df.loc[(df["numSq"]==sq) & (df["StimFreq"]==freq)]
+            patdata = p0.iloc[:,ephysStart:ephysEnd]
+            fitdata = p0.iloc[:,fitStart:fitEnd]
+            patmean = patdata.mean( axis = 0 )
+            fitmean = fitdata.mean( axis = 0 )
+            
+            # for k, p1 in patdata.iterrows():
+            #     a = ax[i,j].plot( np.linspace(0,1000,20000), p1, color='g',alpha=0.03)#,label='all')
+            me = ax[i,j].plot( np.linspace(0,1000,20000), patmean, color="g",label='Mean Observed' )
+            mefit = ax[i,j].plot( np.linspace(0,1000,20000), fitmean, color="b",alpha=0.5,label='Mean Expected')#,label='mean' )
+            ax[i,j].set_xlabel( "Time (ms)" ) if i==1 else None
+            ax[i,j].set_ylabel( "EPSP (mV)" ) if j==0 else None
+            ax[i,j].set_xlim([200,800])
+            ax[i,j].set_title(str(int(freq))+" Hz")
+            # ax[i,j].legend(loc="upper right")
+    fig.legend([me,mefit],labels=['Mean Observed','Mean Expected'],loc='right')
 
 
 if __name__ == "__main__":

@@ -5,11 +5,14 @@ import matplotlib.pyplot as plt
 
 # tag FIXME HACK 
 try:
-    from eidynamics.utils import epoch_to_datapoints, filter_data, plot_abf_data
+    from eidynamics.utils import epoch_to_datapoints, extract_channelwise_data, filter_data, plot_abf_data
 except ModuleNotFoundError:
-    from utils import epoch_to_datapoints, filter_data, plot_abf_data
+    from utils            import epoch_to_datapoints, extract_channelwise_data, filter_data, plot_abf_data
 
-def abf_to_data(abf_file,exclude_channels=[],baseline_criterion=0.1,sweep_baseline_epoch=[0, 0.2],baseline_subtraction=True,signal_scaling=1,sampling_freq=2e4,filter_type='',filter_cutoff=2e3,plot_data=False):
+def abf_to_data(abf_file,exclude_channels=[],
+                baseline_criterion=0.1, sweep_baseline_epoch=[0, 0.2], baseline_subtraction=True,
+                signal_scaling=1, sampling_freq=2e4, filter_type='', filter_cutoff=2e3,
+                data_order="sweepwise", plot_data=False ):
     """
     A wrapper around pyabf module to generate sweep wise dictionary of recorded traces.
     Returns a list with [dict holding sweepwisedata, mean baseline value, baseline fluctuation flag]
@@ -20,6 +23,23 @@ def abf_to_data(abf_file,exclude_channels=[],baseline_criterion=0.1,sweep_baseli
         3       : Field,
         'Time'  : Time Axis,
         'Cmd'   : Ch0 Command Signal
+
+    arguments:
+        abf_file            = path to abf file
+        exclude_channels    = list of which channels not to include in the output, default = '', Others: 'Cmd','Time',0,1,2,3
+        baseline_criterion  = whether to flag a sweep if baseline fluctuates more than the specified fraction
+        sweep_baseline_epoch= window in milliseconds to use for baseline calculation
+        baseline_subtration = whether to offset the traces to zero baseline or not
+        signal_scaling      = due to a DAQ glitch, sometimes the units and signal scaling are not proper. Whether to correct for that or not.
+        sampling_freq       = default 20000 sample/second
+        filter_type         = default: 'None'. Others: 'bessel', 'butter', or 'decimate'. Check eidynamics.utils.filter_data()
+        filter_cutoff       = upper cutoff. default: 2000Hz. to filter spikes use 100-200Hz. Check eidynamics.utils.filter_data()
+        data_order          = whether to return a sweep wise or a channel wise dictionary of data
+        plot_data           = whether to display all channels data, expensive    
+    returns:
+        data                = sweepwise, or if optionally specified channelwise, all recorded traces
+        meanBaseline        = mean baseline value of Ch#0 in the baseline epoch
+        baselineFlag        = default: False, True if any sweep has higher fluctuation than baseline_criterion
     """
 
     try:
@@ -63,16 +83,17 @@ def abf_to_data(abf_file,exclude_channels=[],baseline_criterion=0.1,sweep_baseli
 
         
         data[sweep] = sweepArray
-        sweepArray = {}
-    if not np.all(baselineValues):    
+        sweepArray  = {}
+
+    if np.all(baselineValues):    
         meanBaseline = np.mean(baselineValues)
-        baselineFlag = ((np.max(baselineValues) - np.min(baselineValues)) / np.mean(baselineValues)) - 1 > baseline_criterion
-    # if ((np.max(baselineValues) - np.min(baselineValues)) / np.mean(baselineValues)) - 1 > baseline_criterion:
-    #     baselineFlag = True
-    # else:
-    #     baselineFlag = False
+        baseline_fluctuation = ((np.max(baselineValues) - np.min(baselineValues)) / np.mean(baselineValues)) - 1
+        baselineFlag =  (baseline_fluctuation > baseline_criterion)
 
     print(f'Datafile has {numSweeps} sweeps in {len(data[0])} channels.')
+
+    if data_order == 'channelwise':
+        data = extract_channelwise_data(data)
 
     if plot_data:
         plot_abf_data(data)
@@ -84,6 +105,18 @@ def abf_to_data(abf_file,exclude_channels=[],baseline_criterion=0.1,sweep_baseli
     # print(abf.sweepY) # displays sweep data (ADC)
     # print(abf.sweepX) # displays sweep times (seconds)
     # print(abf.sweepC) # displays command waveform (DAC)
+
+def _baseline_subtractor(sweep,sweep_baseline_epoch,sampling_freq,subtract_baseline):
+    baselineWindow = epoch_to_datapoints(sweep_baseline_epoch,sampling_freq)
+    sweepBaseline  = np.mean(sweep[baselineWindow])
+    ### don't use the following method as baseline should be from a predefined epoch ###
+    # sweepBaseline = _mean_at_least_rolling_variance(sweep[13000:20000],window=2000) 
+
+    if subtract_baseline:
+        sweepNew = sweep - sweepBaseline
+        return sweepNew, sweepBaseline
+    else:
+        return sweep, sweepBaseline
 
 def _mean_at_least_rolling_variance(vector,window=2000,slide=50):
     t1          = 0
@@ -101,17 +134,6 @@ def _mean_at_least_rolling_variance(vector,window=2000,slide=50):
             mu           = np.mean(vector[t1:t2])
         t1      = t1+slide
     return mu
-
-
-def _baseline_subtractor(sweep,sweep_baseline_epoch,sampling_freq,subtract_baseline):
-    # baselineWindow = epoch_to_datapoints(sweep_baseline_epoch,sampling_freq)
-    # sweepBaseline  = np.mean(sweep[baselineWindow])
-    sweepBaseline = _mean_at_least_rolling_variance(sweep[13000:20000],window=2000)
-    if subtract_baseline:
-        sweepNew = sweep - sweepBaseline
-        return sweepNew, sweepBaseline
-    else:
-        return sweep, sweepBaseline
 
 if __name__ == '__main__':
     abfFile = sys.argv[1]

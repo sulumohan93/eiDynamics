@@ -10,7 +10,7 @@ from scipy.optimize  import curve_fit
 from eidynamics.abf_to_data         import abf_to_data
 from eidynamics.expt_to_dataframe   import expt2df
 from eidynamics.ephys_functions     import IRcalc, RaCalc
-from eidynamics.utils               import delayed_alpha_function,PSP_start_time, get_pulse_times
+from eidynamics.utils               import delayed_alpha_function, PSP_start_time, get_pulse_times
 from eidynamics                     import pattern_index
 from eidynamics.errors              import *
 from allcells                       import *
@@ -43,7 +43,7 @@ class Neuron:
         self.spotExpected       = {}
         self.singleSpotDataParsed= False
         self.spotStimFreq       = 20
-        self.trainingSet        = np.zeros((1,40026))
+        #self.trainingSet        = np.zeros((1,40026))
         self.trainingSetLong    = np.zeros((1,60027))
 
     def cell_params_parser(self,ep):
@@ -78,104 +78,17 @@ class Neuron:
         self.updateExperiment(newExpt,self.experiments,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
         # self.add_expt_training_set(newExpt)
 
-        # if exptParams.exptType == '1sq20Hz':
-        #     self.singleSpotDataParsed = True
-        #     self.spotStimFreq         = exptParams.stimFreq
-        #     _1sqExpectedDict          = self.make_spot_profile(newExpt)
-        #     # self.spotExpectedDict.update({exptParams.condition:{exptParams.stimFreq:{exptParams.EorI:_1sqExpectedDict}}})
-        #     self.updateExperiment(_1sqExpectedDict, self.spotExpectedDict, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
-
-        # if self.singleSpotDataParsed == True and exptParams.exptType == 'FreqSweep':
-        #     spotExpectedDict_1sq = self.spotExpectedDict[exptParams.condition]['1sq20Hz'][self.spotStimFreq][exptParams.EorI]
-        #     frameExpectedDict    = self.find_frame_expected(newExpt,spotExpectedDict_1sq)
-        #     self.updateExperiment(frameExpectedDict, self.expectedResponse, exptParams.condition, exptParams.exptType, exptParams.stimFreq, exptParams.EorI)
-
-        # self.add_expt_training_set(newExpt)
-
         return self
 
     def updateExperiment(self,exptObj,exptDict,condition,exptType,stimFreq,EorI):
         """
         Accommodates all the expriment objects into a dictionary
-        Kind of a HACK
         """
-        # if condition not in exptDict:
-        #     exptDict.update({condition:{exptType:{stimFreq:{EorI:exptObj}}}})
-        # else:
-        #     if exptType not in exptDict[condition]:
-        #         exptDict[condition].update({exptType:{stimFreq:{EorI:exptObj}}})
-        #     else:
-        #         if stimFreq not in exptDict[condition][exptType]:
-        #             exptDict[condition][exptType].update({stimFreq:{EorI:exptObj}})
-        #         else:
-        #             if EorI not in exptDict[condition][exptType][stimFreq]:
-        #                 exptDict[condition][exptType][stimFreq].update({EorI:exptObj})
-
-        # exptDict.update(exptDict)
         exptID = exptObj.dataFile[:15]
         newDict = {exptID: [exptType, condition, EorI, stimFreq, exptObj]}
         exptDict.update(newDict)
 
         return exptDict
-
-    def add_expt_training_set(self,exptObj):
-        cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
-        pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
-        
-        tracelength    = 20000
-        inputSet       = np.zeros((exptObj.numSweeps,tracelength+26))
-        outputSet      = np.zeros((exptObj.numSweeps,tracelength))
-        pulseStartTimes= get_pulse_times(exptObj.numPulses,exptObj.stimStart,exptObj.stimFreq)
-        Fs = exptObj.Fs
-
-        IR = IRcalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
-        Ra = RaCalc(exptObj.recordingData, exptObj.clamp, exptObj.IRBaselineEpoch, exptObj.IRchargingPeriod, exptObj.IRsteadystatePeriod, Fs=2e4)[0]
-
-        for sweep in range(exptObj.numSweeps):
-            sweepTrace = cellData[sweep,:tracelength]
-            pdTrace    = pdData[sweep,:tracelength]
-            pdTrace = np.zeros(len(pdTrace))
-            pstimes = (Fs*pulseStartTimes).astype(int)
-            
-            pdTrace[pstimes] = 1.0
-            numSquares = len(exptObj.stimCoords[sweep+1])
-            sqSet = exptObj.stimCoords[sweep+1]
-            patternID = pattern_index.get_patternID(sqSet)
-
-            coordArrayTemp = np.zeros((15))            
-            coordArrayTemp[:numSquares] = exptObj.stimCoords[sweep+1]
-
-            if exptObj.clamp == 'VC' and exptObj.EorI == 'E':
-                clampPotential = -70
-            elif exptObj.clamp == 'VC' and exptObj.EorI == 'I':
-                clampPotential = 0
-            elif exptObj.clamp == 'CC':
-                clampPotential = -70
-
-            gabazineInBath = 1 if (exptObj.condition == 'Gabazine') else 0
-            clamp = 0 if (exptObj.clamp == 'CC') else 1
-
-            tempArray  = np.array([exptObj.stimFreq,
-                                   numSquares,
-                                   exptObj.stimIntensity,
-                                   exptObj.pulseWidth,
-                                   exptObj.meanBaseline,
-                                   clampPotential,
-                                   clamp,
-                                   gabazineInBath,
-                                   IR[sweep],
-                                   Ra[sweep],
-                                   patternID])
-            tempArray2 = np.concatenate((tempArray,coordArrayTemp))
-            inputSet[sweep,:len(tempArray2)] = tempArray2
-            inputSet[sweep,len(tempArray2):] = pdTrace
-            outputSet[sweep,:] = sweepTrace
-
-        newTrainingSet = np.concatenate((inputSet,outputSet),axis=1)
-        oldTrainingSet = self.trainingSet
-        self.trainingSet = np.concatenate((newTrainingSet,oldTrainingSet),axis=0)
-
-        return self
 
     def generate_expected_traces(self):
         for exptID,expt in self.experiments.items():
@@ -198,16 +111,34 @@ class Neuron:
             exptObj = expt[-1]
             self.add_expt_training_set_long(exptObj)
 
-            
     def add_expt_training_set_long(self,exptObj):
+        '''
+        # Field ordering:
+            # 0  Stim Freq : 10, 20, 30, 40, 50, 100 Hz
+            # 1  numSquares : 1, 5, 7, 15 sq
+            # 2  intensity : 100 or 50%
+            # 3  pulse width : 2 or 5 ms
+            # 4  meanBaseline : mV
+            # 5  clamp potential: -70 or 0 mV
+            # 6  CC or VC : CC = 0, VC = 1
+            # 7  Gabazine : Control = 0, Gabazine = 1
+            # 8  IR : MOhn
+            # 9  Ra : membrane time constant
+            # 10 pattern ID : refer to pattern ID in pattern index
+            # 11:26 coords of spots [11,12,13,14,15, 16,17,18,19,20, 21,22,23,24,25]
+            # 26 AP : 1 if yes, 0 if no
+            # 27:20026 Sample points for LED
+            # 20027:40027 Sample points for ephys recording.
+            # 40027:60027 Expected response
+        '''
         exptID         = exptObj.dataFile[:15]
         cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
         pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
         
         tracelength    = 20000
-        inputSet       = np.zeros((exptObj.numSweeps,tracelength+27))
-        outputSet1     = np.zeros((exptObj.numSweeps,tracelength))
-        outputSet2     = np.zeros((exptObj.numSweeps,tracelength))
+        inputSet       = np.zeros((exptObj.numSweeps,tracelength+27)) # photodiode trace
+        outputSet1     = np.zeros((exptObj.numSweeps,tracelength)) # sweep Trace
+        outputSet2     = np.zeros((exptObj.numSweeps,tracelength)) # fit Trace
         pulseStartTimes= get_pulse_times(exptObj.numPulses,exptObj.stimStart,exptObj.stimFreq)
         Fs = exptObj.Fs
 
@@ -219,8 +150,6 @@ class Neuron:
             pdTrace    = pdData[sweep,:tracelength]
             pdTrace    = np.zeros(len(pdTrace))
             
-
-
             pstimes = (Fs*pulseStartTimes).astype(int)
             stimEnd = pstimes[-1]+int(Fs*exptObj.IPI)
             pdTrace[pstimes] = 1.0
@@ -262,8 +191,8 @@ class Neuron:
                                    Ra[sweep],
                                    patternID])
             tempArray2 = np.concatenate((tempArray,coordArrayTemp))
-            inputSet[sweep,:len(tempArray2)] = tempArray2
-            inputSet[sweep,len(tempArray2):] = pdTrace
+            inputSet  [sweep,:len(tempArray2)] = tempArray2
+            inputSet  [sweep,len(tempArray2):] = pdTrace
             outputSet1[sweep,:] = sweepTrace
             outputSet2[sweep,:] = fitTrace
 
@@ -452,17 +381,26 @@ class Experiment:
         self.sweepIndex     += 1
         return self.recordingData[currentSweepIndex]
 
-    def extract_channelwise_data(self,channels=[0,1,2,'Cmd','Time']):
+    def extract_channelwise_data(self,exclude_channels=[]):
         '''
         Returns a dictionary holding channels as keys,
         and sweeps as keys in an nxm 2-d array format where n is number of sweeps
         and m is number of datapoints in the recording per sweep.
         '''
-        channelDict = {}
-        tempChannelData = np.zeros((self.numSweeps,len(self.recordingData[0][0])))
-        for ch in channels:
-            for i in range(self.numSweeps):
-                tempChannelData[i,:] = self.recordingData[i][ch]
+        sweepwise_dict    = self.recordingData
+        chLabels          = list(sweepwise_dict[0].keys())
+        numSweeps         = len(sweepwise_dict)
+        sweepLength       = len(sweepwise_dict[0][chLabels[0]])
+        channelDict       = {}
+        tempChannelData   = np.zeros((numSweeps,sweepLength))
+
+        included_channels = list( set(chLabels) - set(exclude_channels) )
+    
+        channelDict       = {}
+        tempChannelData   = np.zeros((numSweeps,sweepLength))
+        for ch in included_channels:
+            for i in range(numSweeps):
+                tempChannelData[i,:] = sweepwise_dict[i][ch]
             channelDict[ch] = tempChannelData
             tempChannelData = 0.0*tempChannelData            
         return channelDict

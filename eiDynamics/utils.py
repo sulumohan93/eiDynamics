@@ -70,21 +70,51 @@ def baseline(x):
 
 def plot_abf_data(dataDict):
     numChannels = len(dataDict[0])
-    fig,axs     = plt.subplots(numChannels-1,1,sharex=True)
-    for sweep in range(len(dataDict)):
-        sweepData   = dataDict[sweep]       
-        i           = 0
-        axs[0].plot(sweepData['Time'][::5],sweepData['Cmd'][::5],'r')
-        for i in range(numChannels-2):
-            axs[i+1].plot(sweepData['Time'][::5],sweepData[i][::5],'b')
-            axs[i+1].set_ylabel('Ch#'+str(i))
+    chLabels    = list(dataDict[0].keys())
+    sweepLength = len(dataDict[0][chLabels[0]])
 
-    axs[0].set_ylabel('Ch#0 Command')
+    if 'Time' in chLabels:    
+        timeSignal = dataDict[0]['Time']
+        chLabels.remove('Time')
+    else:
+        timeSignal = np.arange(0,sweepLength/2e4,1/2e4)
+    
+    numPlots = len(chLabels)
+    fig,axs     = plt.subplots(numPlots,1,sharex=True)
+    
+    for sweepData in dataDict.values():
+        for i,ch in enumerate(chLabels):
+            if ch == 'Cmd':
+                axs[i].plot(timeSignal[::5],sweepData[ch][::5],'r')
+                axs[i].set_ylabel('Ch#0 Command')
+            else:
+                axs[i].plot(timeSignal[::5],sweepData[ch][::5],'b')
+                axs[i].set_ylabel('Ch# '+str(ch))
+
     axs[-1].set_xlabel('Time (s)')
     axs[-1].annotate('* Data undersampled for plotting',xy=(1.0, -0.5),xycoords='axes fraction',ha='right',va="center",fontsize=6)
     fig.suptitle('ABF Data*')
     plt.show()
 
+def extract_channelwise_data(sweepwise_dict,exclude_channels=[]):
+    '''
+    Returns a dictionary holding channels as keys,
+    and sweeps as keys in an nxm 2-d array format where n is number of sweeps
+    and m is number of datapoints in the recording per sweep.
+    '''
+    chLabels    = list(sweepwise_dict[0].keys())
+    numSweeps   = len(sweepwise_dict)
+    sweepLength = len(sweepwise_dict[0][chLabels[0]])
+    channelDict = {}
+    tempChannelData = np.zeros((numSweeps,sweepLength))
+
+    included_channels = list( set(chLabels) - set(exclude_channels) )
+    for ch in included_channels:
+        for i in range(numSweeps):
+            tempChannelData[i,:] = sweepwise_dict[i][ch]
+        channelDict[ch] = tempChannelData
+        tempChannelData = 0.0*tempChannelData            
+    return channelDict
 
 def find_resposne_start(x,method='stdDev'):
     if method == 'stdDev':    

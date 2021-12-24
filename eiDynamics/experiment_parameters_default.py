@@ -42,7 +42,7 @@ gabaConc        = 2e-6                                            # mol/litre, i
 cellID			= 'XXXN'
 
 bathTemp		= 32												# degree celsius
-location		= ''
+location		= {0:'',3:''}                                       #usually, ch0: patch electrode, ch3: field electrode
 clamp			= ''
 EorI			= ''
 unit			= ''
@@ -55,7 +55,7 @@ intensity		= 100
 pulseWidth		= 2
 stimFreq		= 20 												# in Hz
 repeats			= 3
-numPulses		= 1												# a fixed number for all frequencies
+numPulses		= 8													# a fixed number for all frequencies
 
 exptTypes		= ['GapFree','IR','CurrentStep','1sq20Hz','FreqSweep','LTMSeq','LTMRand','convergence']
 exptType		= exptTypes[4]
@@ -71,13 +71,17 @@ baselineCriterion		= 0.1										# baseline fluctuations of 10% are allowed
 DAQfilterBand           = [0, 10000]
 
 # Epochs (time in seconds)
-sweepDuration           = [0, 2.0]
-sweepBaselineEpoch      = [0, 0.2]    								# seconds, end of baseline time
-opticalStimEpoch        = [0.231, 1.231]
-IRBaselineEpoch         = [1.331, 1.531]
-IRpulseEpoch            = [1.531, 1.831]
-IRchargingPeriod        = [1.531, 1.581]
-IRsteadystatePeriod     = [1.681, 1.831]
+sweepDuration           = [0  , 2.0000]
+sweepBaselineEpoch      = [0  , 0.1999]								# seconds, end of baseline time
+opticalStimEpoch        = [0.2, 1.6687]
+singlePulseEpoch		= [0.2, 0.4999]
+pulseTrainEpoch			= [0.5, 1.6687]
+frameChangeforFreqSweep =  0.150
+IRBaselineEpoch         = [0     , 0.1999]
+IRpulseEpoch            = [1.6688, 1.9687]
+IRchargingPeriod        = [1.6688, 1.7188]
+IRsteadystatePeriod     = [1.7188, 1.9687]
+
 interSweepInterval      = 30                                        # seconds
 
 # Analysis
