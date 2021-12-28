@@ -42,7 +42,7 @@ gabaConc        = 2e-6                                            # mol/litre, i
 cellID			= 'XXXN'
 
 bathTemp		= 32												# degree celsius
-location		= {0:'',3:''}                                       #usually, ch0: patch electrode, ch3: field electrode
+location		= {'stim':'CA3',0:'',3:''}                                       #usually, ch0: patch electrode, ch3: field electrode
 clamp			= ''
 EorI			= ''
 unit			= ''

@@ -76,8 +76,6 @@ class Neuron:
         newExpt         = Experiment(exptParams,datafile,coordfile)
         newExpt.analyze_experiment(self,exptParams)
         self.updateExperiment(newExpt,self.experiments,exptParams.condition,exptParams.exptType,exptParams.stimFreq,exptParams.EorI)
-        # self.add_expt_training_set(newExpt)
-
         return self
 
     def updateExperiment(self,exptObj,exptDict,condition,exptType,stimFreq,EorI):

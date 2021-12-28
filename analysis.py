@@ -114,8 +114,8 @@ def main(inputFile, save_experiment_to_cell=True, show_plots=False):
     cellFile            = exptDir + "\\" + str(exptParams.cellID) + ".pkl"
     cellFile_csv        = exptDir + "\\" + str(exptParams.cellID) + ".xlsx"
     try:
-        cell            = ephys_classes.Neuron.loadCell(cellFile)
         print('Loading local cell data')
+        cell            = ephys_classes.Neuron.loadCell(cellFile)
     except FileNotFoundError as err:
         print('Creating new cell.')
         cell            = ephys_classes.Neuron(exptParams)
