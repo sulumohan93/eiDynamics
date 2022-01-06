@@ -24,7 +24,7 @@ incubation      = (ageAtExp	- ageAtInj)
 
 # Polygon
 objMag          = 40 												# magnification in x
-frameSize       = np.array([13032.25, 7419.2])					# frame size in um, with 1x magnification
+frameSize       = np.array([13433.6, 7296.8])					    # frame size in um, with 1x magnification, 24Dec21 calibration
 gridSize        = 24												# corresponds to pixel size of 13x8 µm
 squareSize      = frameSize / (gridSize * objMag)
 

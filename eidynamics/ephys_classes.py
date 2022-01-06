@@ -5,6 +5,7 @@ import pickle
 import os
 import h5py
 from scipy.optimize  import curve_fit
+from PIL import Image, ImageOps
 
 # EI Dynamics module
 from eidynamics.abf_to_data         import abf_to_data
@@ -130,8 +131,8 @@ class Neuron:
             # 40027:60027 Expected response
         '''
         exptID         = exptObj.dataFile[:15]
-        cellData       = exptObj.extract_channelwise_data(channels=[0])[0]
-        pdData         = exptObj.extract_channelwise_data(channels=[2])[2]
+        cellData       = exptObj.extract_channelwise_data(exclude_channels=[1,2,3,'Time','Cmd'])[0]
+        pdData         = exptObj.extract_channelwise_data(exclude_channels=[0,1,3,'Time','Cmd'])[2]
         
         tracelength    = 20000
         inputSet       = np.zeros((exptObj.numSweeps,tracelength+27)) # photodiode trace
@@ -305,11 +306,12 @@ class Neuron:
         print("Cell experiment data has been added to {}".format(allCellsResponseFile))
 
     def save_training_set(self,directory):
-        celltrainingSet = self.trainingSet[:-1,:]
-        filename = "cell"+str(self.cellID)+"_trainingSet.h5"
-        trainingSetFile = os.path.join(directory,filename)
-        with h5py.File(trainingSetFile, 'w') as f:
-            dset = f.create_dataset("default", data = celltrainingSet)
+        #removed the short training set, need to see if there is any utility
+        # celltrainingSet = self.trainingSet[:-1,:]
+        # filename = "cell"+str(self.cellID)+"_trainingSet.h5"
+        # trainingSetFile = os.path.join(directory,filename)
+        # with h5py.File(trainingSetFile, 'w') as f:
+        #     dset = f.create_dataset("default", data = celltrainingSet)
 
         celltrainingSetLong = self.trainingSetLong
         filename = "cell"+str(self.cellID)+"_trainingSet_longest.h5"
@@ -317,6 +319,21 @@ class Neuron:
         with h5py.File(trainingSetFile, 'w') as f:
             dset = f.create_dataset("default", data = celltrainingSetLong)
 
+    def summarize_experiments(self):
+        df = pd.DataFrame(columns=['Polygon Protocol','Expt Type','Condition','Stim Freq','Stim Intensity','Pulse Width','Clamp','Clamping Potential'])
+        for exptID,expt in self.experiments.items():
+            df.loc[exptID] ={
+                            'Polygon Protocol'  : expt[-1].polygonProtocolFile,
+                            'Expt Type'         : expt[-1].exptType,
+                            'Condition'         : expt[-1].condition,
+                            'Stim Freq'         : expt[-1].stimFreq,
+                            'Stim Intensity'    : expt[-1].stimIntensity,
+                            'Pulse Width'       : expt[-1].pulseWidth,
+                            'Clamp'             : expt[-1].clamp,
+                            'Clamping Potential': expt[-1].clampPotential
+                            }
+        print(df)
+    
     @staticmethod
     def saveCell(neuronObj,filename):
         directory       = os.path.dirname(filename)
@@ -350,7 +367,7 @@ class Experiment:
             print(err)
 
         self.Flags          = {"IRFlag":False,"APFlag":False,"NoisyBaselineFlag":False,"RaChangeFlag":False}
-
+        datafile            = os.path.abspath(datafile)
         data                = abf_to_data(datafile,
                                           baseline_criterion=exptParams.baselineCriterion,
                                           sweep_baseline_epoch=exptParams.sweepBaselineEpoch,
@@ -409,7 +426,7 @@ class Experiment:
         and trial averaged sweeps as an nxm 2-d array where n is number of patterns
         and m is number of datapoints in the recording per sweep.
         '''
-        chData = self.extract_channelwise_data(channels=channels)
+        chData = self.extract_channelwise_data(exclude_channels=[])
         chMean = {}
         for ch in channels:
             chData_temp = np.reshape(chData[ch],(self.numRepeats,int(self.numSweeps/self.numRepeats),-1))
@@ -454,6 +471,7 @@ class Experiment:
             self.location           = ep.location
             self.clamp              = ep.clamp
             self.EorI               = ep.EorI
+            self.clampPotential     = ep.clampPotential
             self.polygonProtocolFile= ep.polygonProtocol
             self.numRepeats         = ep.repeats
             self.numPulses          = ep.numPulses
@@ -517,6 +535,7 @@ class Coords:
         currentSweepIndex   = self.sweepIndex
         self.sweepIndex += 1
         return self.coords[currentSweepIndex]
+
 
 # TODO
 class EphysData:

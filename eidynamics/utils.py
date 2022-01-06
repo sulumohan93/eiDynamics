@@ -1,5 +1,8 @@
 import sys
+import os
+import imp
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 
 from scipy.signal import filter_design
@@ -238,3 +241,37 @@ def get_pulse_times(numPulses,firstPulseStartTime,stimFreq):
     lastPulseTime = firstPulseStartTime+(numPulses-1)*IPI
     pulseTimes = np.linspace(firstPulseStartTime, lastPulseTime, num=numPulses, endpoint=True)
     return pulseTimes
+
+def show_experiment_table(cellDirectory):
+    fileExt = "_experiment_parameters.py"
+    epFiles = [os.path.join(cellDirectory, epFile) for epFile in os.listdir(cellDirectory) if epFile.endswith(fileExt)]
+    df = pd.DataFrame(columns=['Polygon Protocol','Expt Type','Condition','Stim Freq','Stim Intensity','Pulse Width','Clamp','Clamping Potential'])
+    for epFile in epFiles:
+        ep = imp.load_source('ExptParams',epFile)
+        exptID = ep.datafile
+        df.loc[exptID] ={
+                            'Polygon Protocol'  : ep.polygonProtocol,
+                            'Expt Type'         : ep.exptType,
+                            'Condition'         : ep.condition,
+                            'Stim Freq'         : ep.stimFreq,
+                            'Stim Intensity'    : ep.intensity,
+                            'Pulse Width'       : ep.pulseWidth,
+                            'Clamp'             : ep.clamp,
+                            'Clamping Potential': ep.clampPotential
+                        } 
+    print('The Cell Directory has following experiments')
+    print(df)
+
+def cut_trace(trace1d, startpoint, numPulses, frequency, fs, prePulsePeriod = 0.020):
+    ipi             = 1/frequency
+    pulseStartTimes = get_pulse_times(numPulses, startpoint, frequency) - prePulsePeriod
+    pulseEndTimes   = ((pulseStartTimes + ipi + prePulsePeriod)*fs).astype(int)
+    pulseStartTimes = ((pulseStartTimes)*fs).astype(int)
+    trace2d = np.zeros((numPulses,pulseEndTimes[0]-pulseStartTimes[0]))
+
+    for i in range(numPulses):
+        t1,t2 = pulseStartTimes[i],pulseEndTimes[i]
+        print(t1,t2)
+        trace2d[i,:] = trace1d[t1:t2]
+
+    return trace2d

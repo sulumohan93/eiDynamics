@@ -6,20 +6,23 @@ Created on Friday 12th March 2021
 
 import sys
 import os
+import pathlib
 import imp
 
 from eidynamics             import ephys_classes
 from eidynamics.errors      import *
-from eidynamics.plotmaker   import dataframe_to_plots
+from eidynamics.plot_maker   import dataframe_to_plots
 
 def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=False, save_experiment_to_cell=False,save_plots=True):
+    cellDirectory = pathlib.Path(cellDirectory)
     print(120*"-","\nAnalyzing New Cell from: ",cellDirectory)
     try:
         fileExt = "rec.abf"
         recFiles = [os.path.join(cellDirectory, recFile) for recFile in os.listdir(cellDirectory) if recFile.endswith(fileExt)]
+        recFiles = list(cellDirectory.glob('*'+fileExt))
 
         for recFile in recFiles:
-            print("Now analysing: ",recFile)
+            print("Now analysing: ",recFile.name)
             # try:
             cell,cellFile = main(recFile,save_experiment_to_cell=save_experiment_to_cell, show_plots=False)
             # except:
@@ -36,12 +39,12 @@ def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=F
             cell.save_training_set(cellDirectory)
 
         if save_experiment_to_cell:
-            cellFile            = cellDirectory + "\\" + str(cell.cellID) + ".pkl"
-            cellFile_csv        = cellDirectory + "\\" + str(cell.cellID) + ".xlsx"
+            cellFile            = cellDirectory / str(str(cell.cellID) + ".pkl" )
+            cellFile_csv        = cellDirectory / str(str(cell.cellID) + ".xlsx")
             ephys_classes.Neuron.saveCell(cell, cellFile)
             cell.response.to_excel(cellFile_csv)
         else:
-            cell.response.to_excel(cellDirectory + "\\" + str(cell.cellID) + "_temp.xlsx")
+            cell.response.to_excel(cellDirectory / str(str(cell.cellID) + "_temp.xlsx") )
             
     except UnboundLocalError as err:
         print("Check if there are '_rec' labeled .abf files in the directory.")
@@ -68,11 +71,11 @@ def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=F
     #     pass
 
 def main(inputFile, save_experiment_to_cell=True, show_plots=False):
-    datafile      = os.path.realpath(inputFile)
-    exptDir       = os.path.dirname(datafile)
-    exptFile      = os.path.basename(datafile)
+    datafile      = pathlib.Path(inputFile)
+    exptDir       = datafile.parent
+    exptFile      = datafile.name
     fileID        = exptFile[:15]
-    parameterFile = exptDir + "\\" + fileID + "_experiment_parameters.py"
+    parameterFile = exptDir / str(fileID + "_experiment_parameters.py")
     parameterFile = os.path.abspath(parameterFile)
 
     # Import Experiment Variables
@@ -101,7 +104,8 @@ def main(inputFile, save_experiment_to_cell=True, show_plots=False):
         if not coordfileName:
             raise FileNotFoundError
         coordfile       = os.path.join(os.getcwd(), "polygonProtocols", coordfileName)
-        os.path.isfile(coordfile)
+        coordfile       = pathlib.Path.cwd() / "polygonProtocols" / coordfileName
+        # os.path.isfile(coordfile)
         print('Local coord file loaded from: ', coordfile)
     except FileNotFoundError:
         print('No coord file found, probably there isn\'t one')
@@ -111,8 +115,8 @@ def main(inputFile, save_experiment_to_cell=True, show_plots=False):
         coordfile       = ''
 
     # Recording cell data and analyses
-    cellFile            = exptDir + "\\" + str(exptParams.cellID) + ".pkl"
-    cellFile_csv        = exptDir + "\\" + str(exptParams.cellID) + ".xlsx"
+    cellFile            = exptDir / str(str(exptParams.cellID) + ".pkl")
+    cellFile_csv        = exptDir / str(str(exptParams.cellID) + ".xlsx")
     try:
         print('Loading local cell data')
         cell            = ephys_classes.Neuron.loadCell(cellFile)

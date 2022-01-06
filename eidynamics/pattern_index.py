@@ -1,19 +1,14 @@
-gridSize = 24
+import numpy as np
+from scipy.optimize import curve_fit
+
+gridSize        = 24
 separationStyle = 'hex'
-sparsity = 2  # denotes how close together the squares can be, sparsity of 1 means a chessboard pattern
-totalCoords = 45
-
-
-def get_patternID(sqSet):
-    for k,v in patternID.items():
-        if v == sqSet:
-            return int(k)
-
+sparsity        = 2  # denotes how close together the squares can be, sparsity of 1 means a chessboard pattern
+totalCoords     = 45
 
 _1sqCoords = [147,243,339,435,101,197,293,389,485,151,247,343,439,105,201,
               297,393,489,155,251,347,443,109,205,301,397,493,159,255,351,
               447,113,209,305,401,497,163,259,355,451,117,213,309,405,501]  # not ordered
-
 
 '''Check projectExperiments.xslx sheet for details'''
 patternID = {1	:[101],
@@ -118,4 +113,47 @@ patternID = {1	:[101],
              100:[101,117,147,163,213,243,259,309,339,355,405,435,451,497,501],
              101:[109,155,159,205,251,255,297,301,347,351,393,397,443,489,493],
              102:[113,117,163,209,213,259,305,309,355,401,405,447,451,497,501],
-             103:[113,159,163,209,255,259,305,351,355,397,401,447,451,493,497]}
+             103:[113,159,163,209,255,259,305,351,355,397,401,447,451,493,497],
+             999:[101,105,109,113,117,147,151,155,159,163,197,201,205,209,213,
+             243,247,251,255,259,293,297,301,305,309,339,343,347,351,355,389,393,
+             397,401,405,435,439,443,447,451,485,489,493,497,501]}
+
+def get_patternID(sqSet):
+    for k,v in patternID.items():
+        if v == sqSet:
+            return int(k)
+            
+################# Calibration Details ################
+
+calibration_mapping_file = "\\Lab\\Projects\\EI_Dynamics\\Protocols\\Configurations\\21-12-24_Polygon_Calibration_Map_40x.map"
+# 40xWI objective, glass slide, 0.5x camera magnification, polygon numbered grid calibration
+
+map = {
+        'x' : [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875], # fraction polygon frame X
+        'y' : [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875], # fraction polygon frame Y
+        'cx': [106,   285,  464,   642, 822,   1002, 1183 ], # camera pixel number X
+        'cy': [244,   341,  439,   535, 632,   730,  827  ]  # camera pixel number Y
+}
+
+def pixel_scaling(x,m,c):
+    y = m*np.array(x) + c
+    return y
+    
+poptx,_  = curve_fit(pixel_scaling,map['x'],map['cx'])
+popty,_  = curve_fit(pixel_scaling,map['y'],map['cy'])
+
+x0,y0    = [pixel_scaling(0,*poptx), pixel_scaling(0,*popty)]
+x1,y1    = [pixel_scaling(1,*poptx), pixel_scaling(1,*popty)]
+
+polygon_frame_properties =  {   
+                            'top_left'      :[x0,y0],
+                            'top_right'     :[x1,y0],
+                            'bottom_right'  :[x1,y1],
+                            'bottom_left'   :[x0,y1],
+                            'width'         : round(x1-x0),
+                            'height'        : round(y1-y0),
+                            'aspect_ratio'  :(x1-x0) / (y1-y0),
+                            'scaling'       :[round((x1-x0)/gridSize), round((y1-y0)/gridSize)],
+                            'offsetx'       : round(x0),
+                            'offsety'       : round(y0),
+                            }

@@ -3,9 +3,11 @@ import pyabf
 import numpy as np
 import matplotlib.pyplot as plt
 
-# tag FIXME HACK 
-try:
+# tag FIXME HACK
+# if the module is imported 
+try: 
     from eidynamics.utils import epoch_to_datapoints, extract_channelwise_data, filter_data, plot_abf_data
+# when the module is run from command line
 except ModuleNotFoundError:
     from utils            import epoch_to_datapoints, extract_channelwise_data, filter_data, plot_abf_data
 

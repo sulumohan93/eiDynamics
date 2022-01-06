@@ -2,7 +2,7 @@ import os
 import sys
 
 import analysis
-from eidynamics.plotmaker   import dataframe_to_plots
+from eidynamics.plot_maker  import dataframe_to_plots
 from eidynamics             import ephys_classes
 from allcells               import *
 
