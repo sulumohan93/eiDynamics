@@ -101,7 +101,7 @@ class Neuron:
                 FreqExptObj = expt[-1]
                 for k,v in self.spotExpected.items():
                     if [c,ei] == v[:2]:
-                        spotExpectedDict1sq = v[-1]                
+                        spotExpectedDict1sq = v[-1]
                         frameExpectedDict    = self.find_frame_expected(FreqExptObj,spotExpectedDict1sq)
                         self.expectedResponse[exptID] = frameExpectedDict
         

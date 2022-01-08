@@ -1,6 +1,6 @@
 import os
 import sys
-
+import pathlib
 import analysis
 from eidynamics.plot_maker  import dataframe_to_plots
 from eidynamics             import ephys_classes
@@ -41,7 +41,9 @@ def meta_plot(allCellsFile):
 if __name__ == "__main__":
     if "analyse" in sys.argv:
         print("Analysing all catalogued cells recordings...")
+        # dir_to_analyse = 
         for cellDirectory in allCells:
+        # cellDirectory = sys.argv[2]
             savedCellFile = batch_analysis((projectPathRoot+cellDirectory),add_cell_to_database=True, export_training_set=True, save_experiment_to_cell=True,save_plots=True)
             print("Data saved in cell file: ",savedCellFile)
             # batch_plot(savedCellFile)

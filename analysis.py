@@ -28,7 +28,7 @@ def create_cell(cellDirectory, add_cell_to_database=False, export_training_set=F
             # except:
                 # pass
             # saving
-        
+        print('Now generating expected traces.')
         cell.generate_expected_traces()
 
         if add_cell_to_database:

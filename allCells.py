@@ -12,8 +12,14 @@ elif os.path.exists(cloudDataPath):
 elif os.path.exists(rigDataPath):
     projectPathRoot = rigDataPath
 
-# These cells have been passed through the data parsing pipeline 25 Oct 2021
-allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\",
+# These cells have been passed through the data parsing pipeline by 6 Jan 2022
+
+allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-12-28_G630\\6301\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-16_G550\\5501\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-16_G550\\5502\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-15_G562\\5621\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-11-10_G561\\5611\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5212\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-09-07_G521\\5211\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-07-29_G388\\3882\\",
@@ -32,7 +38,12 @@ allCells = ["Lab\\Projects\\EI_Dynamics\\Data\\21-09-23_G529\\5291\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-04-02_G250\\2501\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-06_G234\\2341\\",
             "Lab\\Projects\\EI_Dynamics\\Data\\21-03-06_G234\\2342\\",
-            "Lab\\Projects\\EI_Dynamics\\Data\\21-03-04_G233\\2331\\"]
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-03-04_G233\\2331\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-28_G630\\6301\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-16_G550\\5501\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-16_G550\\5502\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-12-15_G562\\5621\\",
+            "Lab\\Projects\\EI_Dynamics\\Data\\21-11-10_G561\\5611\\"]
 
 testCells = ["Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\5211\\",
              "Lab\\Projects\\EI_Dynamics\\Analysis\\testExamples\\testCells\\3882\\"]
